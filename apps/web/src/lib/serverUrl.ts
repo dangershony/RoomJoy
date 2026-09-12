@@ -1,5 +1,12 @@
 export function getServerUrl(): string {
-  return import.meta.env.VITE_SERVER_URL || 'ws://localhost:2567';
+  if (import.meta.env.VITE_SERVER_URL) {
+    return import.meta.env.VITE_SERVER_URL;
+  }
+  if (typeof window !== 'undefined') {
+    const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${proto}//${window.location.host}`;
+  }
+  return 'ws://localhost:2567';
 }
 
 /** HTTP origin for REST helpers (derived from WS URL). */
