@@ -1,0 +1,672 @@
+{
+  "version": "1.0.0",
+  "packId": "cc-adult-v1",
+  "gameId": "confidence-club",
+  "contentMode": "adult",
+  "locale": "en",
+  "questions": [
+    {
+      "id": "adu_gk_01",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "Which spirit is the main base of a classic margarita?",
+      "options": [
+        "Vodka",
+        "Gin",
+        "Tequila",
+        "Rum"
+      ],
+      "correctIndex": 2,
+      "clue": "It is distilled from the agave plant.",
+      "explanation": "A classic margarita is tequila, orange liqueur, and lime juice.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Margarita",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_02",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Who wrote the novel \"1984\"?",
+      "options": [
+        "Aldous Huxley",
+        "George Orwell",
+        "Ray Bradbury",
+        "Franz Kafka"
+      ],
+      "correctIndex": 1,
+      "clue": "Same author as Animal Farm.",
+      "explanation": "George Orwell published Nineteen Eighty-Four in 1949.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Nineteen_Eighty-Four",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_03",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "In poker, what is a \"full house\"?",
+      "options": [
+        "Four of a kind",
+        "Three of a kind plus a pair",
+        "Five sequential suited cards",
+        "Two pairs"
+      ],
+      "correctIndex": 1,
+      "clue": "Also called a \"full boat\" — three matching + two matching.",
+      "explanation": "A full house is three cards of one rank and two of another.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/List_of_poker_hands",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_04",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "What does \"IPA\" stand for in craft beer?",
+      "options": [
+        "International Pale Ale",
+        "India Pale Ale",
+        "Irish Porter Ale",
+        "Imperial Pilsner Ale"
+      ],
+      "correctIndex": 1,
+      "clue": "Historically linked to British beer shipped toward South Asia.",
+      "explanation": "IPA stands for India Pale Ale.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/India_pale_ale",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_05",
+      "category": "general_knowledge",
+      "difficulty": "hard",
+      "prompt": "Which film won the Academy Award for Best Picture in 1994 (ceremony for 1993 films)?",
+      "options": [
+        "Pulp Fiction",
+        "Schindler's List",
+        "Forrest Gump",
+        "The Piano"
+      ],
+      "correctIndex": 1,
+      "clue": "Steven Spielberg's Holocaust drama.",
+      "explanation": "Schindler's List won Best Picture at the 66th Academy Awards.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/66th_Academy_Awards",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_06",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "What is the legal drinking age in the United States (federal standard for purchase)?",
+      "options": [
+        "18",
+        "19",
+        "21",
+        "25"
+      ],
+      "correctIndex": 2,
+      "clue": "Raised nationwide in the 1980s via highway funding rules.",
+      "explanation": "The National Minimum Drinking Age Act established 21 for purchase.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/National_Minimum_Drinking_Age_Act",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_07",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "Which city is traditionally associated with Mardi Gras celebrations in the U.S.?",
+      "options": [
+        "Chicago",
+        "New Orleans",
+        "Seattle",
+        "Boston"
+      ],
+      "correctIndex": 1,
+      "clue": "Think jazz, French Quarter, and beads.",
+      "explanation": "New Orleans is famous for its Mardi Gras carnival.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Mardi_Gras_in_New_Orleans",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_08",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Compared to the same volume of drip coffee, espresso is typically:",
+      "options": [
+        "More caffeinated per ounce (more concentrated)",
+        "Completely caffeine-free",
+        "Identical in caffeine per ounce always",
+        "Only available as decaf"
+      ],
+      "correctIndex": 0,
+      "clue": "It is a concentrated extraction; a full mug of drip often has more total caffeine.",
+      "explanation": "Espresso is more concentrated per ounce, though serving sizes differ so totals vary.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Espresso",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_09",
+      "category": "general_knowledge",
+      "difficulty": "hard",
+      "prompt": "Which economist wrote \"The Wealth of Nations\" (1776)?",
+      "options": [
+        "Karl Marx",
+        "John Maynard Keynes",
+        "Adam Smith",
+        "Milton Friedman"
+      ],
+      "correctIndex": 2,
+      "clue": "Often called the father of modern economics; Scottish Enlightenment.",
+      "explanation": "Adam Smith published An Inquiry into the Nature and Causes of the Wealth of Nations in 1776.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/The_Wealth_of_Nations",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_10",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "What does \"BYOB\" usually mean on a party invite?",
+      "options": [
+        "Bring Your Own Book",
+        "Bring Your Own Bottle",
+        "Buy Your Own Burger",
+        "Be Your Own Boss"
+      ],
+      "correctIndex": 1,
+      "clue": "Hosts are not providing drinks.",
+      "explanation": "BYOB commonly means bring your own bottle (alcohol).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/BYOB",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_01",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "A standard bottle of wine is about how many milliliters?",
+      "options": [
+        "375",
+        "500",
+        "750",
+        "1000"
+      ],
+      "correctIndex": 2,
+      "clue": "It is three-quarters of a liter.",
+      "explanation": "Most still wine bottles are 750 ml.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Wine_bottle",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_02",
+      "category": "numerical_estimation",
+      "difficulty": "easy",
+      "prompt": "How many cards are in a standard deck (no jokers)?",
+      "options": [
+        "48",
+        "52",
+        "54",
+        "56"
+      ],
+      "correctIndex": 1,
+      "clue": "Four suits of 13 ranks each.",
+      "explanation": "A standard deck has 52 cards.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Standard_52-card_deck",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_03",
+      "category": "numerical_estimation",
+      "difficulty": "hard",
+      "prompt": "Roughly what percentage of Earth's surface is covered by water?",
+      "options": [
+        "50%",
+        "60%",
+        "70%",
+        "90%"
+      ],
+      "correctIndex": 2,
+      "clue": "Often summarized as \"about seven-tenths\".",
+      "explanation": "Oceans and other water cover about 71% of Earth's surface.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Earth",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_04",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "About how many minutes of gameplay are in a regulation NBA quarter?",
+      "options": [
+        "8",
+        "10",
+        "12",
+        "15"
+      ],
+      "correctIndex": 2,
+      "clue": "Four of these make a regulation game before overtime.",
+      "explanation": "NBA quarters are 12 minutes each.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/National_Basketball_Association",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_05",
+      "category": "numerical_estimation",
+      "difficulty": "easy",
+      "prompt": "A \"fifth\" of liquor is historically about how many ounces?",
+      "options": [
+        "12",
+        "16",
+        "25.6",
+        "40"
+      ],
+      "correctIndex": 2,
+      "clue": "Named for one-fifth of a U.S. gallon.",
+      "explanation": "A fifth is 1/5 gallon ≈ 25.6 U.S. fl oz (today often sold as 750 ml).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Fifth_(unit)",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_06",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "How many squares are on a standard chessboard?",
+      "options": [
+        "32",
+        "48",
+        "64",
+        "81"
+      ],
+      "correctIndex": 2,
+      "clue": "It is an 8×8 grid.",
+      "explanation": "A chessboard has 64 squares.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Chessboard",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_07",
+      "category": "numerical_estimation",
+      "difficulty": "hard",
+      "prompt": "Approximate ABV of most mainstream lagers (beer)?",
+      "options": [
+        "1%",
+        "5%",
+        "15%",
+        "40%"
+      ],
+      "correctIndex": 1,
+      "clue": "Much lower than spirits; higher than most kombucha.",
+      "explanation": "Many lagers sit around 4–6% alcohol by volume.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Beer",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_08",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "How many holes are on a standard golf course round?",
+      "options": [
+        "9",
+        "12",
+        "18",
+        "21"
+      ],
+      "correctIndex": 2,
+      "clue": "A \"full round\" is double a short-course loop.",
+      "explanation": "A standard course round is 18 holes.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Golf",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_01",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "In casino roulette (European), a single-number bet pays 35:1. If you bet $1 and win, your profit is:",
+      "options": [
+        "$1",
+        "$35",
+        "$36",
+        "$70"
+      ],
+      "correctIndex": 1,
+      "clue": "35:1 means 35 units of profit, stake returned separately.",
+      "explanation": "At 35:1 you win $35 profit (plus your $1 stake back as $36 total returned).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Roulette",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_02",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "If every member of a club is over 21, and Sam is a member, then:",
+      "options": [
+        "Sam might be 18",
+        "Sam is over 21",
+        "Sam owns the club",
+        "Sam is under 21"
+      ],
+      "correctIndex": 1,
+      "clue": "Universal rule applied to a specific member.",
+      "explanation": "If all members are over 21 and Sam is a member, Sam is over 21.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Deductive_reasoning",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_03",
+      "category": "logical_reasoning",
+      "difficulty": "hard",
+      "prompt": "A fair coin is flipped twice. Probability of two heads?",
+      "options": [
+        "1/2",
+        "1/3",
+        "1/4",
+        "1/8"
+      ],
+      "correctIndex": 2,
+      "clue": "Independent flips: multiply probabilities.",
+      "explanation": "(1/2)×(1/2)=1/4.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Coin_flipping",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_04",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "\"Only managers have keys. Jordan has a key.\" What follows?",
+      "options": [
+        "Jordan might be an intern with a spare",
+        "Jordan is a manager",
+        "Keys are useless",
+        "Everyone has keys"
+      ],
+      "correctIndex": 1,
+      "clue": "\"Only managers have keys\" means anyone with a key must be a manager.",
+      "explanation": "If only managers have keys and Jordan has a key, Jordan is a manager.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Syllogism",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_05",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "Which number is the odd one out: 3, 5, 7, 9, 11?",
+      "options": [
+        "3",
+        "5",
+        "9",
+        "11"
+      ],
+      "correctIndex": 2,
+      "clue": "Four are prime; one is composite.",
+      "explanation": "9 = 3×3 is not prime; the others are prime.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Prime_number",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_06",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "If interest compounds annually at 100% on $100 for 1 year, you end with:",
+      "options": [
+        "$100",
+        "$150",
+        "$200",
+        "$400"
+      ],
+      "correctIndex": 2,
+      "clue": "Doubling once.",
+      "explanation": "100% annual compound interest doubles the principal in one year → $200.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Compound_interest",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_07",
+      "category": "logical_reasoning",
+      "difficulty": "hard",
+      "prompt": "There are 5 people at a party. Everyone shakes hands with everyone else once. How many handshakes?",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20"
+      ],
+      "correctIndex": 1,
+      "clue": "Combinations: n(n-1)/2.",
+      "explanation": "C(5,2)=10 handshakes.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Handshake_problem",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_08",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "A bartender says: \"Happy hour is 4–7pm.\" It is 7:05pm. Is it happy hour?",
+      "options": [
+        "Yes",
+        "No",
+        "Only if the clock is wrong",
+        "Ambiguous always"
+      ],
+      "correctIndex": 1,
+      "clue": "Exclusive end times are common: until 7 means ends at 7.",
+      "explanation": "At 7:05 the stated window has ended.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Happy_hour",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_01",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Which came first historically?",
+      "options": [
+        "Prohibition in the U.S. ends (21st Amendment)",
+        "World War II begins in Europe",
+        "First human on the Moon",
+        "Fall of the Soviet Union"
+      ],
+      "correctIndex": 0,
+      "clue": "Think early 1930s for the end of Prohibition.",
+      "explanation": "21st Amendment ratified 1933; WWII 1939; Moon 1969; USSR 1991.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Twenty-first_Amendment_to_the_United_States_Constitution",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_02",
+      "category": "ordering",
+      "difficulty": "easy",
+      "prompt": "Typical order in a three-course Western meal — which is first?",
+      "options": [
+        "Dessert",
+        "Main course",
+        "Appetizer",
+        "Cheese board after coffee only"
+      ],
+      "correctIndex": 2,
+      "clue": "It whets the appetite.",
+      "explanation": "Appetizer/starter comes before the main and dessert.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Full_course_dinner",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_03",
+      "category": "ordering",
+      "difficulty": "hard",
+      "prompt": "Which Beatles album was released first?",
+      "options": [
+        "Abbey Road",
+        "Sgt. Pepper's Lonely Hearts Club Band",
+        "Please Please Me",
+        "Let It Be"
+      ],
+      "correctIndex": 2,
+      "clue": "Their debut studio album (1963).",
+      "explanation": "Please Please Me (1963) preceded the later classic albums listed.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Please_Please_Me",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_04",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Which step comes first when brewing pour-over coffee?",
+      "options": [
+        "Pour all water at once blindly",
+        "Grind beans",
+        "Drink",
+        "Wash the mug after"
+      ],
+      "correctIndex": 1,
+      "clue": "You need grounds before extraction.",
+      "explanation": "Beans are ground (after weighing) before brewing.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Coffee_preparation",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_05",
+      "category": "ordering",
+      "difficulty": "easy",
+      "prompt": "In a standard wine service sequence, which happens first?",
+      "options": [
+        "Guest tastes and accepts",
+        "Server empties the bottle into trash",
+        "Cork is presented / bottle opened",
+        "Dessert wine with steak"
+      ],
+      "correctIndex": 2,
+      "clue": "You open before anyone tastes.",
+      "explanation": "Opening (and often presenting the cork) precedes tasting.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Wine_tasting",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_06",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Which tax-year event usually comes earliest in the calendar year for U.S. filers?",
+      "options": [
+        "April filing deadline",
+        "Receiving W-2 forms (typically by end of January)",
+        "October extension deadline",
+        "December 31 tax year end already passed"
+      ],
+      "correctIndex": 1,
+      "clue": "Employers must furnish W-2s early in the new year.",
+      "explanation": "Form W-2 is generally due to employees by January 31.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Form_W-2",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_11",
+      "category": "general_knowledge",
+      "difficulty": "hard",
+      "prompt": "What does \"sommelier\" primarily refer to?",
+      "options": [
+        "A pastry chef",
+        "A wine steward / wine specialist",
+        "A head bartender only",
+        "A meat carver"
+      ],
+      "correctIndex": 1,
+      "clue": "Often certified to pair bottles with food.",
+      "explanation": "A sommelier is a trained wine professional, often in restaurants.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Sommelier",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_12",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which cocktail traditionally includes mint, lime, sugar, soda, and rum?",
+      "options": [
+        "Old Fashioned",
+        "Mojito",
+        "Manhattan",
+        "Negroni"
+      ],
+      "correctIndex": 1,
+      "clue": "Cuban origin; muddled mint is iconic.",
+      "explanation": "A mojito combines white rum, sugar, lime, soda water, and mint.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Mojito",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_09",
+      "category": "numerical_estimation",
+      "difficulty": "hard",
+      "prompt": "A \"proof\" number for U.S. spirits is roughly how related to ABV?",
+      "options": [
+        "Same as ABV",
+        "Twice the ABV",
+        "Half the ABV",
+        "ABV squared"
+      ],
+      "correctIndex": 1,
+      "clue": "80 proof ≈ 40% ABV.",
+      "explanation": "In the U.S., proof is typically twice the alcohol by volume percentage.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Alcohol_proof",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_ne_10",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "How many players start on the field per side in American football?",
+      "options": [
+        "9",
+        "11",
+        "15",
+        "18"
+      ],
+      "correctIndex": 1,
+      "clue": "Same count as soccer, different sport.",
+      "explanation": "Eleven players per team are on the field at a time.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/American_football",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_or_07",
+      "category": "ordering",
+      "difficulty": "hard",
+      "prompt": "Which streaming service launched earliest?",
+      "options": [
+        "Disney+",
+        "Netflix (DVD-by-mail era began 1997; streaming later)",
+        "Apple TV+",
+        "Paramount+"
+      ],
+      "correctIndex": 1,
+      "clue": "It started as a DVD rental mail service in the late 1990s.",
+      "explanation": "Netflix was founded in 1997; the other services launched decades later.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Netflix",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_lr_09",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "If a bar tab is $40 and you tip 20%, tip amount is:",
+      "options": [
+        "$4",
+        "$6",
+        "$8",
+        "$10"
+      ],
+      "correctIndex": 2,
+      "clue": "20% of 40 is one-fifth.",
+      "explanation": "0.20 × 40 = $8.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Gratuity",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "adu_gk_13",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which grape is traditionally the primary red grape of Burgundy, France?",
+      "options": [
+        "Cabernet Sauvignon",
+        "Pinot Noir",
+        "Syrah",
+        "Zinfandel"
+      ],
+      "correctIndex": 1,
+      "clue": "Thin-skinned, elegant reds from cool climates.",
+      "explanation": "Burgundy reds are predominantly Pinot Noir.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Burgundy_wine",
+      "verificationDate": "2026-09-01"
+    }
+  ]
+}

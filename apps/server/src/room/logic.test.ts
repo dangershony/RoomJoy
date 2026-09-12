@@ -7,6 +7,7 @@ import {
 import { listGameCatalog } from '@roomjoy/game-sdk';
 import {
   LogicError,
+  applyGameAction,
   applyInput,
   assertNoCrossPlayerSecrets,
   claimHost,
@@ -26,6 +27,7 @@ import {
   startRound,
   startTutorial,
   tickMovement,
+  toPublicState,
   transferHost,
   type InternalRoom,
 } from './logic.js';
@@ -339,26 +341,39 @@ describe('game switch preserves membership', () => {
 });
 
 describe('private state channel', () => {
-  it('each player only sees own secret; host does not get others', () => {
+  it('each player only sees own CC answers; host does not get others', () => {
     const { room, host, players } = hostAndPlayers(3);
     selectGame(room, host.id, 'confidence-club');
     startTutorial(room, host.id);
+    startRound(room, host.id);
+
+    applyGameAction(room, players[0]!.id, 'submit_answer', {
+      optionIndex: 0,
+      confidence: 2,
+    });
+    applyGameAction(room, players[1]!.id, 'submit_answer', {
+      optionIndex: 3,
+      confidence: 1,
+    });
 
     for (const p of players) {
       const priv = getPrivateStateForPlayer(room, p.id) as {
-        secret: string;
+        gameId: string;
+        myInitialOption: number | null;
       };
-      expect(priv.secret).toContain(p.id.slice(0, 6));
+      expect(priv.gameId).toBe('confidence-club');
       expect(assertNoCrossPlayerSecrets(room, p.id, priv)).toBe(true);
     }
 
-    // Host's private payload must not include guest secrets
-    const hostPriv = getPrivateStateForPlayer(room, host.id);
-    const guest = players[1]!;
-    const guestPriv = getPrivateStateForPlayer(room, guest.id) as {
-      secret: string;
+    const hostPriv = getPrivateStateForPlayer(room, host.id) as {
+      myInitialOption: number | null;
     };
-    expect(JSON.stringify(hostPriv)).not.toContain(guestPriv.secret);
+    const guestPriv = getPrivateStateForPlayer(room, players[1]!.id) as {
+      myInitialOption: number | null;
+    };
+    expect(hostPriv.myInitialOption).toBe(0);
+    expect(guestPriv.myInitialOption).toBe(3);
+    expect(hostPriv.myInitialOption).not.toBe(guestPriv.myInitialOption);
   });
 });
 
@@ -377,5 +392,36 @@ describe('game catalog', () => {
       expect(g.thumbnail).toBeTruthy();
       expect(g.estimatedDurationMinutes).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('confidence club actions', () => {
+  it('rejects late actions after results', () => {
+    const { room, host, players } = hostAndPlayers(2);
+    selectGame(room, host.id, 'confidence-club');
+    startTutorial(room, host.id);
+    startRound(room, host.id);
+    endRound(room, host.id);
+    expect(room.phase).toBe('RESULTS');
+    expect(() =>
+      applyGameAction(room, players[0]!.id, 'submit_answer', {
+        optionIndex: 1,
+        confidence: 2,
+      }),
+    ).toThrow(LogicError);
+  });
+
+  it('public state omits correctIndex until reveal', () => {
+    const { room, host } = hostAndPlayers(2);
+    selectGame(room, host.id, 'confidence-club');
+    startTutorial(room, host.id);
+    startRound(room, host.id);
+    const state = toPublicState(room, { includeHostCode: false });
+    const gs = state.publicGameState as {
+      correctIndex: number | null;
+      question: { prompt: string } | null;
+    };
+    expect(gs.question?.prompt).toBeTruthy();
+    expect(gs.correctIndex).toBeNull();
   });
 });

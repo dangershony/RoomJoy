@@ -49,6 +49,7 @@ export interface RoomConnection {
   endRound: () => void;
   startGame: () => void;
   sendInput: (direction: Direction) => void;
+  sendGameAction: (action: string, payload?: unknown) => void;
   tryReconnect: () => Promise<boolean>;
   disconnect: () => void;
 }
@@ -285,6 +286,10 @@ export function useRoomConnection(): RoomConnection {
     roomRef.current?.send('input', { direction, seq: seqRef.current });
   }, []);
 
+  const sendGameAction = useCallback((action: string, payload: unknown = {}) => {
+    roomRef.current?.send('game_action', { action, payload });
+  }, []);
+
   const disconnect = useCallback(() => {
     intentionalLeave.current = true;
     void roomRef.current?.leave();
@@ -337,6 +342,7 @@ export function useRoomConnection(): RoomConnection {
     endRound,
     startGame,
     sendInput,
+    sendGameAction,
     tryReconnect,
     disconnect,
   };

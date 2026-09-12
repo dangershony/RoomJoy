@@ -10,6 +10,7 @@ import {
 import {
   JoinRateLimiter,
   LogicError,
+  applyGameAction,
   applyInput,
   attachTv,
   claimHost,
@@ -83,6 +84,7 @@ export class RoomJoyRoom extends Room {
       ['end_round', false],
       ['start_game', false],
       ['input', true],
+      ['game_action', true],
       ['reconnect', true],
     ];
     for (const [name, hasPayload] of handlers) {
@@ -97,11 +99,24 @@ export class RoomJoyRoom extends Room {
     }
 
     const tickMs = 1000 / TICK_RATE_HZ;
+    let lastSubstate = this.logic.gameSubstate;
+    let lastPhase = this.logic.phase;
     this.tickInterval = setInterval(() => {
       tickMovement(this.logic, tickMs);
-      if (this.logic.phase === 'PLAYING') {
+      const phaseChanged = this.logic.phase !== lastPhase;
+      const subChanged = this.logic.gameSubstate !== lastSubstate;
+      if (
+        this.logic.phase === 'PLAYING' ||
+        this.logic.phase === 'TUTORIAL' ||
+        (phaseChanged && this.logic.phase === 'RESULTS')
+      ) {
         this.broadcastState();
+        if (phaseChanged || subChanged) {
+          this.broadcastPrivateStates();
+        }
       }
+      lastSubstate = this.logic.gameSubstate;
+      lastPhase = this.logic.phase;
     }, tickMs);
 
     this.recoverInterval = setInterval(() => {
@@ -295,6 +310,18 @@ export class RoomJoyRoom extends Room {
             msg.direction as Direction,
             msg.seq,
           );
+          break;
+        }
+        case 'game_action': {
+          if (!meta.playerId) return;
+          applyGameAction(
+            this.logic,
+            meta.playerId,
+            msg.action,
+            msg.payload,
+          );
+          this.broadcastState();
+          this.broadcastPrivateStates();
           break;
         }
         case 'reconnect':

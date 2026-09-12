@@ -1,6 +1,6 @@
 /** RoomJoy shared protocol — Milestone 2 */
 
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 export const MAX_PLAYERS = 8;
 export const MAX_NICKNAME_LENGTH = 16;
@@ -140,6 +140,13 @@ export interface MsgReconnect {
   role: ClientRole;
 }
 
+/** Game-module action (answers, tutorial advance, host skip, etc.) */
+export interface MsgGameAction {
+  type: 'game_action';
+  action: string;
+  payload?: unknown;
+}
+
 export type ClientMessage =
   | MsgCreateTv
   | MsgJoinPhone
@@ -157,6 +164,7 @@ export type ClientMessage =
   | MsgEndRound
   | MsgStartGame
   | MsgInput
+  | MsgGameAction
   | MsgReconnect;
 
 /** Server → Client messages / state snapshots */
@@ -205,6 +213,8 @@ export interface RoomStatePublic {
   games: GameCatalogEntry[];
   /** Stub results payload when in RESULTS */
   resultsSummary: string | null;
+  /** Sanitized per-game public snapshot (no unrevealed private answers) */
+  publicGameState: unknown | null;
 }
 
 /** Per-player private channel — never broadcast; never sent to host for others */

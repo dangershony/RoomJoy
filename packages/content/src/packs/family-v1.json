@@ -1,0 +1,638 @@
+{
+  "version": "1.0.0",
+  "packId": "cc-family-v1",
+  "gameId": "confidence-club",
+  "contentMode": "family",
+  "locale": "en",
+  "questions": [
+    {
+      "id": "fam_gk_01",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "How many continents are there on Earth (by the seven-continent model taught in many schools)?",
+      "options": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "correctIndex": 2,
+      "clue": "Africa and Antarctica are both counted separately in this model.",
+      "explanation": "The seven-continent model lists Africa, Antarctica, Asia, Europe, North America, Oceania/Australia, and South America.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Continent",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_02",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "What is the chemical symbol for water?",
+      "options": [
+        "O2",
+        "H2O",
+        "CO2",
+        "NaCl"
+      ],
+      "correctIndex": 1,
+      "clue": "It combines the lightest element with oxygen.",
+      "explanation": "Water is two hydrogen atoms bonded to one oxygen atom: H₂O.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Water",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_03",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "Which planet is known as the Red Planet?",
+      "options": [
+        "Venus",
+        "Mars",
+        "Jupiter",
+        "Mercury"
+      ],
+      "correctIndex": 1,
+      "clue": "Its dusty surface is rich in iron oxide.",
+      "explanation": "Mars appears reddish due to iron oxide (rust) on its surface.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Mars",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_04",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "What is the largest ocean on Earth by area?",
+      "options": [
+        "Atlantic",
+        "Indian",
+        "Arctic",
+        "Pacific"
+      ],
+      "correctIndex": 3,
+      "clue": "It borders Asia and the Americas and covers more than 30% of Earth's surface.",
+      "explanation": "The Pacific Ocean is the largest and deepest of Earth's ocean divisions.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Pacific_Ocean",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_05",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "How many sides does a hexagon have?",
+      "options": [
+        "5",
+        "6",
+        "7",
+        "8"
+      ],
+      "correctIndex": 1,
+      "clue": "Think of a beehive cell.",
+      "explanation": "A hexagon is a six-sided polygon; honeycomb cells are hexagonal.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Hexagon",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_06",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which gas do plants primarily absorb for photosynthesis?",
+      "options": [
+        "Oxygen",
+        "Nitrogen",
+        "Carbon dioxide",
+        "Helium"
+      ],
+      "correctIndex": 2,
+      "clue": "Humans exhale the gas plants use as a carbon source.",
+      "explanation": "Plants take in CO₂ and release O₂ during photosynthesis.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Photosynthesis",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_07",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "What is the capital city of Japan?",
+      "options": [
+        "Osaka",
+        "Kyoto",
+        "Tokyo",
+        "Nagoya"
+      ],
+      "correctIndex": 2,
+      "clue": "It is one of the world's most populous metro areas and hosts the Imperial Palace.",
+      "explanation": "Tokyo has been Japan's capital since the late 19th century (Meiji era).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Tokyo",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_08",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which instrument has 88 keys on a standard full-size version?",
+      "options": [
+        "Guitar",
+        "Flute",
+        "Piano",
+        "Violin"
+      ],
+      "correctIndex": 2,
+      "clue": "It spans more than seven octaves of black and white keys.",
+      "explanation": "A modern standard piano typically has 88 keys (52 white, 36 black).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Musical_keyboard",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_09",
+      "category": "general_knowledge",
+      "difficulty": "easy",
+      "prompt": "What do bees collect from flowers to make honey?",
+      "options": [
+        "Pollen only",
+        "Nectar",
+        "Sap",
+        "Dew"
+      ],
+      "correctIndex": 1,
+      "clue": "It is a sugary liquid produced by flowers to attract pollinators.",
+      "explanation": "Worker bees collect nectar and convert it into honey in the hive.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Honey",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_10",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which ancient wonder was located in Alexandria, Egypt?",
+      "options": [
+        "Colossus of Rhodes",
+        "Hanging Gardens",
+        "Lighthouse (Pharos)",
+        "Statue of Zeus"
+      ],
+      "correctIndex": 2,
+      "clue": "It guided ships into a famous Mediterranean harbor.",
+      "explanation": "The Lighthouse of Alexandria (Pharos) was one of the Seven Wonders of the Ancient World.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Lighthouse_of_Alexandria",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_01",
+      "category": "numerical_estimation",
+      "difficulty": "easy",
+      "prompt": "About how many days are in a non-leap year?",
+      "options": [
+        "360",
+        "365",
+        "370",
+        "400"
+      ],
+      "correctIndex": 1,
+      "clue": "February has 28 days in these years.",
+      "explanation": "A common year has 365 days; leap years have 366.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Year",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_02",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "Roughly how many bones are in an adult human body?",
+      "options": [
+        "106",
+        "156",
+        "206",
+        "256"
+      ],
+      "correctIndex": 2,
+      "clue": "Babies start with more; some fuse as we grow.",
+      "explanation": "Adults typically have 206 bones after fusion of some childhood bones.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Human_skeleton",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_03",
+      "category": "numerical_estimation",
+      "difficulty": "easy",
+      "prompt": "How many degrees are in a full circle?",
+      "options": [
+        "90",
+        "180",
+        "270",
+        "360"
+      ],
+      "correctIndex": 3,
+      "clue": "A right angle is one-quarter of this.",
+      "explanation": "A full rotation is defined as 360 degrees in common measure.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Degree_(angle)",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_04",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "About how many meters are in a kilometer?",
+      "options": [
+        "10",
+        "100",
+        "1000",
+        "10000"
+      ],
+      "correctIndex": 2,
+      "clue": "The prefix \"kilo-\" means thousand.",
+      "explanation": "1 kilometer = 1000 meters by SI definition.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Kilometre",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_05",
+      "category": "numerical_estimation",
+      "difficulty": "hard",
+      "prompt": "Approximate boiling point of water at standard sea-level pressure (°C)?",
+      "options": [
+        "0",
+        "50",
+        "100",
+        "212"
+      ],
+      "correctIndex": 2,
+      "clue": "Freezing is 0°C on the same scale; boiling is the other classic landmark.",
+      "explanation": "At 1 atm, pure water boils at about 100°C (212°F).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Boiling_point",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_06",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "How many minutes are in 2.5 hours?",
+      "options": [
+        "120",
+        "140",
+        "150",
+        "180"
+      ],
+      "correctIndex": 2,
+      "clue": "Half an hour is 30 minutes.",
+      "explanation": "2 hours = 120 minutes; plus 30 = 150 minutes.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Hour",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_07",
+      "category": "numerical_estimation",
+      "difficulty": "easy",
+      "prompt": "A dozen equals how many items?",
+      "options": [
+        "6",
+        "10",
+        "12",
+        "20"
+      ],
+      "correctIndex": 2,
+      "clue": "Egg cartons often use this count.",
+      "explanation": "A dozen is a grouping of twelve.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Dozen",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_08",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "About how many teeth does a typical adult human have (including wisdom teeth)?",
+      "options": [
+        "20",
+        "28",
+        "32",
+        "40"
+      ],
+      "correctIndex": 2,
+      "clue": "Kids have 20 baby teeth; adults gain more permanent ones.",
+      "explanation": "A full adult set is usually 32 teeth including four wisdom teeth.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Human_tooth",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_01",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "If all roses are flowers and some flowers fade quickly, which must be true?",
+      "options": [
+        "All roses fade quickly",
+        "Some roses may fade quickly",
+        "No roses fade",
+        "All flowers are roses"
+      ],
+      "correctIndex": 1,
+      "clue": "\"Some flowers\" does not force every rose into that group.",
+      "explanation": "We only know roses are flowers; whether they fade quickly is possible but not guaranteed for all.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Syllogism",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_02",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "What comes next: 2, 4, 8, 16, …?",
+      "options": [
+        "18",
+        "24",
+        "32",
+        "30"
+      ],
+      "correctIndex": 2,
+      "clue": "Each term doubles.",
+      "explanation": "The sequence is powers of two: 2ⁿ.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Geometric_progression",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_03",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "A farmer has 17 sheep; all but 9 run away. How many are left?",
+      "options": [
+        "8",
+        "9",
+        "17",
+        "0"
+      ],
+      "correctIndex": 1,
+      "clue": "Read \"all but 9\" carefully.",
+      "explanation": "\"All but 9\" means 9 remain.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Word_problem_(mathematics_education)",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_04",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "If today is Wednesday, what day will it be in 10 days?",
+      "options": [
+        "Friday",
+        "Saturday",
+        "Sunday",
+        "Monday"
+      ],
+      "correctIndex": 1,
+      "clue": "A week from Wednesday is Wednesday; count the extra days.",
+      "explanation": "10 = 7+3, so three days after Wednesday is Saturday.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Week",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_05",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "Which shape has exactly three sides?",
+      "options": [
+        "Square",
+        "Triangle",
+        "Pentagon",
+        "Circle"
+      ],
+      "correctIndex": 1,
+      "clue": "Its name starts with \"tri-\" (three).",
+      "explanation": "A triangle is a three-sided polygon.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Triangle",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_06",
+      "category": "logical_reasoning",
+      "difficulty": "medium",
+      "prompt": "You have a 3-liter and a 5-liter jug. Can you measure exactly 4 liters by filling/pouring?",
+      "options": [
+        "No, impossible",
+        "Yes, classic puzzle",
+        "Only with a third jug",
+        "Only if jugs are marked"
+      ],
+      "correctIndex": 1,
+      "clue": "This is the water-jug puzzle from Die Hard with a Vengeance fame.",
+      "explanation": "By filling, emptying, and pouring between jugs you can obtain 4 liters in the 5-liter jug.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Water_pouring_puzzle",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_07",
+      "category": "logical_reasoning",
+      "difficulty": "hard",
+      "prompt": "All Blips are Blops. Some Blops are Blaps. Therefore:",
+      "options": [
+        "All Blips are Blaps",
+        "Some Blips are Blaps",
+        "No Blips are Blaps",
+        "None of the above must be true"
+      ],
+      "correctIndex": 3,
+      "clue": "The \"some\" set of Blops might not overlap Blips at all.",
+      "explanation": "There is no forced overlap between Blips and Blaps from the premises.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Categorical_proposition",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_lr_08",
+      "category": "logical_reasoning",
+      "difficulty": "easy",
+      "prompt": "If a clock shows 3:00, what is the angle between hour and minute hands?",
+      "options": [
+        "0°",
+        "45°",
+        "90°",
+        "180°"
+      ],
+      "correctIndex": 2,
+      "clue": "At 3 o'clock the minute hand is on 12 and the hour hand on 3.",
+      "explanation": "Each hour mark is 30°; from 12 to 3 is 90°.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Clock_angle_problem",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_01",
+      "category": "ordering",
+      "difficulty": "easy",
+      "prompt": "Which comes first chronologically?",
+      "options": [
+        "Writing a thank-you note after a party",
+        "Receiving a party invitation",
+        "Attending the party",
+        "Buying a gift on the way home"
+      ],
+      "correctIndex": 1,
+      "clue": "You need to know about the event before you go.",
+      "explanation": "Invitation precedes attendance and follow-up thanks.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Invitation",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_02",
+      "category": "ordering",
+      "difficulty": "easy",
+      "prompt": "In the water cycle, which typically happens first for rain to form?",
+      "options": [
+        "Precipitation",
+        "Condensation into clouds",
+        "Collection in oceans only",
+        "Plant respiration alone"
+      ],
+      "correctIndex": 1,
+      "clue": "Water vapor must cool and form droplets before falling.",
+      "explanation": "Evaporated water condenses into clouds, then may precipitate as rain.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Water_cycle",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_03",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Which U.S. president served earliest?",
+      "options": [
+        "Abraham Lincoln",
+        "George Washington",
+        "Theodore Roosevelt",
+        "John F. Kennedy"
+      ],
+      "correctIndex": 1,
+      "clue": "He was the first under the Constitution.",
+      "explanation": "George Washington served 1789–1797, earlier than the others listed.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/George_Washington",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_04",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Put these by size (smallest first). Which is the smallest?",
+      "options": [
+        "Earth",
+        "Sun",
+        "Moon",
+        "Jupiter"
+      ],
+      "correctIndex": 2,
+      "clue": "It orbits Earth and is much smaller than any planet here.",
+      "explanation": "The Moon's diameter is far smaller than Earth's, Jupiter's, or the Sun's.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Moon",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_05",
+      "category": "ordering",
+      "difficulty": "easy",
+      "prompt": "In a standard English dictionary, which word would appear first?",
+      "options": [
+        "Zebra",
+        "Apple",
+        "Mango",
+        "Banana"
+      ],
+      "correctIndex": 1,
+      "clue": "Alphabetical order starts near A.",
+      "explanation": "Apple begins with A, before B, M, or Z.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Alphabetical_order",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_06",
+      "category": "ordering",
+      "difficulty": "medium",
+      "prompt": "Which event came first?",
+      "options": [
+        "First Moon landing (Apollo 11)",
+        "Invention of the World Wide Web",
+        "Fall of the Berlin Wall",
+        "Launch of the first iPhone"
+      ],
+      "correctIndex": 0,
+      "clue": "It happened in 1969, decades before the consumer internet boom.",
+      "explanation": "Apollo 11 landed in 1969; WWW ~1989–91; Berlin Wall 1989; iPhone 2007.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Apollo_11",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_or_07",
+      "category": "ordering",
+      "difficulty": "hard",
+      "prompt": "Which meal is typically earliest in the day?",
+      "options": [
+        "Dinner",
+        "Lunch",
+        "Breakfast",
+        "Supper"
+      ],
+      "correctIndex": 2,
+      "clue": "Its name literally refers to breaking a fast overnight.",
+      "explanation": "Breakfast is the first meal of the day for most people.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Breakfast",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_11",
+      "category": "general_knowledge",
+      "difficulty": "hard",
+      "prompt": "What is the hardest natural substance on the Mohs scale?",
+      "options": [
+        "Quartz",
+        "Topaz",
+        "Diamond",
+        "Corundum"
+      ],
+      "correctIndex": 2,
+      "clue": "It scores a perfect 10 and is carbon in a crystal lattice.",
+      "explanation": "Diamond ranks 10 on the Mohs hardness scale.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Mohs_scale",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_gk_12",
+      "category": "general_knowledge",
+      "difficulty": "medium",
+      "prompt": "Which mammal is known for laying eggs?",
+      "options": [
+        "Kangaroo",
+        "Platypus",
+        "Dolphin",
+        "Bat"
+      ],
+      "correctIndex": 1,
+      "clue": "It is a monotreme found in Australia with a duck-like bill.",
+      "explanation": "The platypus (and echidnas) are egg-laying mammals.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Platypus",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_09",
+      "category": "numerical_estimation",
+      "difficulty": "hard",
+      "prompt": "About how many kilometers is a marathon?",
+      "options": [
+        "21",
+        "42",
+        "50",
+        "100"
+      ],
+      "correctIndex": 1,
+      "clue": "It is a bit over 26 miles.",
+      "explanation": "A marathon is 42.195 km (26.2 miles).",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Marathon",
+      "verificationDate": "2026-09-01"
+    },
+    {
+      "id": "fam_ne_10",
+      "category": "numerical_estimation",
+      "difficulty": "medium",
+      "prompt": "How many players are on the field for one soccer (football) team during normal play?",
+      "options": [
+        "9",
+        "10",
+        "11",
+        "12"
+      ],
+      "correctIndex": 2,
+      "clue": "Includes the goalkeeper.",
+      "explanation": "Association football fields 11 players per side including the keeper.",
+      "sourceUrl": "https://en.wikipedia.org/wiki/Association_football",
+      "verificationDate": "2026-09-01"
+    }
+  ]
+}

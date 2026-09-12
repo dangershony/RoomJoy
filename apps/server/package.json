@@ -1,6 +1,6 @@
 {
   "name": "@roomjoy/server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "colyseus": "0.15.57",
     "cors": "2.8.5",
     "express": "4.21.2",
-    "nanoid": "5.0.9"
+    "nanoid": "5.0.9",
+    "@roomjoy/content": "workspace:*"
   },
   "devDependencies": {
     "@types/cors": "2.8.17",

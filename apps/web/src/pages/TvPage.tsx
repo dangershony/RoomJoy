@@ -7,6 +7,8 @@ import { PlayerList } from '../components/PlayerList';
 import { GameCanvas } from '../components/GameCanvas';
 import { GameLibrary } from '../components/GameLibrary';
 import { PhaseStub } from '../components/PhaseStub';
+import { TvConfidenceClub } from '../games/confidence-club/TvConfidenceClub';
+import type { CcPublicState } from '../games/confidence-club/types';
 
 export function TvPage() {
   const conn = useRoomConnection();
@@ -93,6 +95,14 @@ export function TvPage() {
   }
 
   if (phase === 'TUTORIAL') {
+    if (conn.state?.selectedGameId === 'confidence-club') {
+      return (
+        <TvConfidenceClub
+          phase={phase}
+          publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+        />
+      );
+    }
     return (
       <main className="app-shell" style={{ padding: '2rem', alignItems: 'center', justifyContent: 'center' }}>
         <PhaseStub
@@ -115,7 +125,15 @@ export function TvPage() {
   }
 
   if (phase === 'PLAYING') {
-    // Snack Chase / demo still shows movement canvas; others show stub
+    if (conn.state?.selectedGameId === 'confidence-club') {
+      return (
+        <TvConfidenceClub
+          phase={phase}
+          publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+        />
+      );
+    }
+    // Snack Chase / legacy demo (no catalog game) still shows movement canvas
     const showCanvas =
       !conn.state?.selectedGameId || conn.state.selectedGameId === 'snack-chase';
     return (
@@ -158,6 +176,22 @@ export function TvPage() {
   }
 
   if (phase === 'RESULTS') {
+    if (conn.state?.selectedGameId === 'confidence-club') {
+      return (
+        <main className="app-shell" style={{ padding: '2rem', gap: '1rem' }}>
+          <TvConfidenceClub
+            phase={phase}
+            publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+          />
+          <p className="tagline" style={{ textAlign: 'center' }}>
+            {conn.state?.resultsSummary}
+          </p>
+          <p className="tagline" style={{ textAlign: 'center' }}>
+            Waiting for host to return to the library…
+          </p>
+        </main>
+      );
+    }
     return (
       <main
         className="app-shell"

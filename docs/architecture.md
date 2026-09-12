@@ -1,8 +1,8 @@
-# Architecture (Milestone 2)
+# Architecture (Milestone 3)
 
 ## Overview
 
-RoomJoy is an **authoritative Colyseus room** with a React TV display and phone controllers. Clients send intents; the server owns phase, roster, game module selection, and simulation stubs.
+RoomJoy is an **authoritative Colyseus room** with a React TV display and phone controllers. Clients send intents; the server owns phase, roster, game module selection, and simulation.
 
 ```
 ┌─────────────┐     WebSocket      ┌──────────────────┐
@@ -19,12 +19,12 @@ RoomJoy is an **authoritative Colyseus room** with a React TV display and phone 
 | Role | How | Can do |
 |------|-----|--------|
 | Display (TV) | `create('roomjoy', {role:tv})` | QR, codes, library reflection, phase screens; reconnect with TV token |
-| Player (phone) | Join by room code | Nickname + avatar; inputs; see own private tip |
-| Host (phone) | Claimed host code (once) or transfer | Select game, content mode, tutorial/round, pause/resume, lock, remove, transfer, library |
+| Player (phone) | Join by room code | Nickname + avatar; game actions; see own private answers |
+| Host (phone) | Claimed host code (once) or transfer | Select game, content mode, tutorial/round, pause/resume, lock, remove, transfer, library, skip phase |
 
 Capacity: **8 phones + 1 TV**. Session tokens are random (`nanoid`) and **not** derivable from the room code.
 
-Host must **not** receive other players' secrets. Private payloads go only on the `private_state` channel to the owning `playerId`.
+Host must **not** receive other players' secrets. Private payloads go only on the `private_state` channel to the owning `playerId`. TV `publicGameState` never includes unrevealed answers.
 
 ## Room phases
 
@@ -32,28 +32,27 @@ Host must **not** receive other players' secrets. Private payloads go only on th
 
 Also: `PAUSED` (host or TV disconnect) with `resumePhase` / `pauseReason`; `ENDED` if TV recover window (60s) expires.
 
+## Confidence Club
+
+Server-authoritative round flow: answering → locked → revising (clue) → reveal × 6. Scoring is pure TypeScript in `@roomjoy/confidence-club`. Content packs live in `@roomjoy/content` (family / adult JSON, zod-validated). Mixed Signals and Snack Chase remain stubs.
+
 ## Game registration
 
-`@roomjoy/game-sdk` `registerGame(GameDefinition)`. Catalog appears in public state and `GET /api/games`. Switching games cleans module state but **preserves room membership**.
-
-## Simulation / stubs
-
-- Tick rate 20 Hz (movement demo still used for Snack Chase / legacy start).
-- Stale phone input (`STALE_INPUT_MS`) stops movement.
-- Full game rules are out of scope for M2 — stubs only.
+`@roomjoy/game-sdk` `registerGame(GameDefinition)` with optional `onAction`, `getPublicState`, `getPrivateState`, `requestEnd`. Catalog appears in public state and `GET /api/games`. Switching games cleans module state but **preserves room membership**.
 
 ## Trust boundaries
 
-- Sanitize nicknames; validate avatars; rate-limit joins.
+- Sanitize nicknames; validate avatars; rate-limit joins; validate game actions.
 - Host actions require `player.isHost`.
-- Ignore client-authored positions/scores/secrets.
+- Ignore client-authored positions/scores/secrets; late actions rejected after RESULTS.
 
 ## Packages
 
-- `@roomjoy/protocol` — shared contracts (M2 lifecycle + catalog)
+- `@roomjoy/protocol` — shared contracts
 - `@roomjoy/game-sdk` — registration + hooks
-- `@roomjoy/confidence-club` / `mixed-signals` / `snack-chase` — stubs
-- `@roomjoy/content` — decks/prompts (stub)
+- `@roomjoy/confidence-club` — playable rules + scoring
+- `@roomjoy/mixed-signals` / `snack-chase` — stubs
+- `@roomjoy/content` — versioned question packs
 
 ## Deploy
 

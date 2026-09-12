@@ -19,7 +19,7 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'roomjoy-server', version: '0.2.0' });
+  res.json({ ok: true, service: 'roomjoy-server', version: '0.3.0' });
 });
 
 app.get('/api/games', (_req, res) => {

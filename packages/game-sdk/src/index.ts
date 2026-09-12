@@ -1,6 +1,6 @@
 /**
- * RoomJoy Game SDK — Milestone 2 registration + lifecycle hooks.
- * Games register metadata and stubs; the platform owns room membership.
+ * RoomJoy Game SDK — registration + lifecycle hooks.
+ * Games register metadata and rules; the platform owns room membership.
  */
 import type {
   ContentMode,
@@ -42,6 +42,13 @@ export interface GameDefinition {
   /** Called each tick while PLAYING and not paused */
   onTick?(ctx: GameContext, dtMs: number): void;
   onInput?(ctx: GameContext, playerId: string, direction: Direction): void;
+  /** Game-specific validated actions (answers, tutorial advance, etc.) */
+  onAction?(
+    ctx: GameContext,
+    playerId: string,
+    action: string,
+    payload: unknown,
+  ): { ok: boolean; error?: string };
   onPause?(ctx: GameContext): void;
   onResume?(ctx: GameContext): void;
   /** Produce RESULTS summary; platform transitions to RESULTS */
@@ -52,7 +59,9 @@ export interface GameDefinition {
    * Platform delivers only to that player (not TV, not other phones, not host-as-others).
    */
   getPrivateState?(ctx: GameContext, playerId: string): unknown;
-  /** Optional PLAYING substate label for UI stubs */
+  /** Public game snapshot safe for TV + all phones (no unrevealed answers) */
+  getPublicState?(ctx: GameContext): unknown;
+  /** Optional PLAYING / TUTORIAL substate label for UI */
   getSubstate?(ctx: GameContext): string | null;
 }
 
@@ -61,9 +70,13 @@ export interface GameContext {
   contentMode: ContentMode;
   players: GamePlayer[];
   gameState: unknown;
+  /** Wall-clock ms for timers */
+  now: number;
   setGameState(next: unknown): void;
   setSubstate(label: string | null): void;
   broadcast(event: string, payload: unknown): void;
+  /** Transition room to RESULTS with summary (e.g. after last question) */
+  requestEnd(summary: string): void;
 }
 
 const registry = new Map<string, GameDefinition>();
@@ -112,11 +125,14 @@ export function makeGameContext(opts: {
   setState: (s: unknown) => void;
   setSubstate: (s: string | null) => void;
   broadcast?: (event: string, payload: unknown) => void;
+  requestEnd?: (summary: string) => void;
+  now?: number;
 }): GameContext {
   return {
     phase: opts.phase,
     contentMode: opts.contentMode,
     players: opts.players,
+    now: opts.now ?? Date.now(),
     get gameState() {
       return opts.getState();
     },
@@ -128,6 +144,9 @@ export function makeGameContext(opts: {
     },
     broadcast(event, payload) {
       opts.broadcast?.(event, payload);
+    },
+    requestEnd(summary) {
+      opts.requestEnd?.(summary);
     },
   };
 }

@@ -6,6 +6,8 @@ import { PlayerList } from '../components/PlayerList';
 import { GameLibrary } from '../components/GameLibrary';
 import { PhaseStub } from '../components/PhaseStub';
 import { getAvatar } from '@roomjoy/protocol';
+import { PhoneConfidenceClub } from '../games/confidence-club/PhoneConfidenceClub';
+import type { CcPrivateState, CcPublicState } from '../games/confidence-club/types';
 
 export function JoinPage() {
   const { code: codeParam } = useParams();
@@ -59,6 +61,32 @@ export function JoinPage() {
   if (conn.status === 'connected' && conn.state) {
     const phase = conn.state.phase;
     const isHost = !!me?.isHost;
+    const isCC = conn.state.selectedGameId === 'confidence-club';
+
+    if (isCC && (phase === 'TUTORIAL' || phase === 'PLAYING' || phase === 'RESULTS')) {
+      return (
+        <PhoneShell>
+          <PhoneConfidenceClub
+            phase={phase}
+            publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+            privateState={(conn.privateState as CcPrivateState | null) ?? null}
+            isHost={isHost}
+            onTutorialNext={() => conn.sendGameAction('tutorial_next')}
+            onAdvance={() => conn.sendGameAction('advance')}
+            onSubmitAnswer={(optionIndex, confidence) =>
+              conn.sendGameAction('submit_answer', { optionIndex, confidence })
+            }
+            onReviseAnswer={(optionIndex) =>
+              conn.sendGameAction('revise_answer', { optionIndex })
+            }
+            onStartRound={() => conn.startRound()}
+            onPause={() => conn.pause()}
+            onReturnToLibrary={() => conn.returnToLibrary()}
+          />
+          {isHost && phase !== 'RESULTS' ? <HostPlayerAdmin conn={conn} /> : null}
+        </PhoneShell>
+      );
+    }
 
     if (phase === 'TUTORIAL') {
       return (
@@ -80,6 +108,9 @@ export function JoinPage() {
     }
 
     if (phase === 'PLAYING') {
+      // Demo / snack-chase: D-pad. No demo path when a non-movement game is selected.
+      const showDpad =
+        !conn.state.selectedGameId || conn.state.selectedGameId === 'snack-chase';
       return (
         <PhoneShell>
           <h1 style={{ marginBottom: 0 }}>
@@ -91,10 +122,14 @@ export function JoinPage() {
               : 'Hold a direction — release to stop'}
           </p>
           <PrivateHint privateState={conn.privateState} />
-          <Dpad
-            onDir={(d) => conn.sendInput(d)}
-            onStop={() => conn.sendInput('none')}
-          />
+          {showDpad ? (
+            <Dpad
+              onDir={(d) => conn.sendInput(d)}
+              onStop={() => conn.sendInput('none')}
+            />
+          ) : (
+            <p className="tagline">Follow the TV — phone controls coming later.</p>
+          )}
           {isHost ? <HostLifecycleControls conn={conn} phase={phase} /> : null}
           <PlayerList players={conn.state.players} />
         </PhoneShell>

@@ -2,7 +2,7 @@
 
 **Good company. Clever games.**
 
-TV + phone multiplayer party games. Milestone 2 is the **shared platform**: game library, lobby polish, full room lifecycle, host controls, game-sdk registration, and session recovery — with placeholder tutorial/play/results for three games.
+TV + phone multiplayer party games. Milestone 3 ships a complete **Confidence Club** vertical slice on the M2 platform (library, lobby, lifecycle, host controls).
 
 ## Requirements
 
@@ -14,20 +14,22 @@ TV + phone multiplayer party games. Milestone 2 is the **shared platform**: game
 ```bash
 corepack enable   # or: npm i -g pnpm@9.15.0
 pnpm install
-pnpm build        # protocol + game-sdk + games + server + web
+pnpm build        # protocol + content + game-sdk + games + server + web
 pnpm dev          # server :2567 + web :5173
 ```
 
-- Open **http://localhost:5173/tv** on the TV (or a desktop window).
-- Tap **Start** (also unlocks audio).
-- Open the join URL / scan QR on phones, or go to **/join** and enter the room code.
-- Enter the **host claim code** shown on the TV (once).
-- Host selects a game (Confidence Club / Mixed Signals / Snack Chase), toggles Family/Adult, starts **Tutorial → Round → Results**, then returns to the library.
-- Room code stays visible for late join while joining is unlocked.
+### Play Confidence Club locally
+
+1. Open **http://localhost:5173/tv** on the TV (or a desktop window) → **Start**.
+2. Join on phones via QR / **http://localhost:5173/join** with the room code (need **2+** players).
+3. Enter the **host claim code** from the TV (once).
+4. Host selects **Confidence Club**, picks **Family** or **Adult** content, **Start tutorial**.
+5. Advance the short tutorial (scoring is explained on-screen), then **Start round**.
+6. Each question: answer + confidence 1/2/3 → clue → optional revise (confidence locked) → reveal. Six questions; scores may go negative; ties share place.
 
 ```bash
-pnpm test         # Vitest (lifecycle, host-only, transfer, remove, lock, game switch, secrets)
-pnpm build        # all packages + apps
+pnpm test         # content schema + CC scoring/engine + server lifecycle
+pnpm build
 ```
 
 ## Monorepo layout
@@ -37,8 +39,8 @@ apps/web          React + Vite + TypeScript (TV + phone UI)
 apps/server       Node + Colyseus + TypeScript (authoritative room)
 packages/protocol Shared types, constants, nickname sanitize
 packages/game-sdk Game registration + lifecycle hooks
-packages/content  Content pack stub
-packages/games/*  Confidence Club / Mixed Signals / Snack Chase (stubs)
+packages/content  Versioned Confidence Club question packs (zod-validated)
+packages/games/*  Confidence Club (playable) / Mixed Signals & Snack Chase (stubs)
 docs/             Architecture, TV notes, VPS deploy, adding a game
 ```
 
@@ -50,7 +52,7 @@ Production: set `PUBLIC_WEB_URL` / `VITE_PUBLIC_WEB_URL` to the public HTTPS ori
 
 ## Deploy (VPS)
 
-See **[docs/deploy-vps.md](docs/deploy-vps.md)** for env template usage, systemd, Nginx/WebSocket notes, restart/rollback. Optional CI workflow YAML is documented in docs/deploy-vps.md (add under `.github/workflows/` when the token has `workflow` scope).
+See **[docs/deploy-vps.md](docs/deploy-vps.md)**. Milestone 3 does not require a VPS deploy.
 
 ## License
 

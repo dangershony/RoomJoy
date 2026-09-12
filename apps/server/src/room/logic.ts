@@ -144,17 +144,23 @@ function gamePlayers(room: InternalRoom): GamePlayer[] {
   }));
 }
 
-function bindCtx(room: InternalRoom) {
+function bindCtx(room: InternalRoom, now = Date.now()) {
   return makeGameContext({
     phase: room.phase,
     contentMode: room.contentMode,
     players: gamePlayers(room),
+    now,
     getState: () => room.gameState,
     setState: (s) => {
       room.gameState = s;
     },
     setSubstate: (s) => {
       room.gameSubstate = s;
+    },
+    requestEnd: (summary: string) => {
+      room.phase = 'RESULTS';
+      room.gameSubstate = null;
+      room.resultsSummary = summary;
     },
   });
 }
@@ -366,6 +372,13 @@ export function setContentSettings(
     throw new LogicError('BAD_STATE', 'Invalid content mode');
   }
   room.contentMode = contentMode;
+  // Refresh selected game initial state so pack selection applies before play
+  if (room.phase === 'LOBBY' && room.selectedGameId) {
+    const def = getGame(room.selectedGameId);
+    if (def?.createInitialState) {
+      room.gameState = def.createInitialState(contentMode);
+    }
+  }
 }
 
 export function startTutorial(room: InternalRoom, playerId: string): void {
@@ -521,6 +534,14 @@ export function applyInput(
 ): void {
   const player = room.players.get(playerId);
   if (!player || !player.connected) return;
+  // Movement demo only when no catalog game (legacy debug) or snack-chase stub
+  if (
+    room.selectedGameId &&
+    room.selectedGameId !== 'snack-chase'
+  ) {
+    // Confidence Club / Mixed Signals: ignore directional input
+    return;
+  }
   if (seq < player.inputSeq) return;
   player.inputSeq = seq;
   player.direction = direction;
@@ -528,44 +549,72 @@ export function applyInput(
 
   if (room.phase === 'PLAYING' && room.selectedGameId) {
     const def = getGame(room.selectedGameId);
-    def?.onInput?.(bindCtx(room), playerId, direction);
+    def?.onInput?.(bindCtx(room, now), playerId, direction);
+  }
+}
+
+export function applyGameAction(
+  room: InternalRoom,
+  playerId: string,
+  action: string,
+  payload: unknown,
+  now = Date.now(),
+): void {
+  if (!room.selectedGameId) {
+    throw new LogicError('BAD_STATE', 'No game selected');
+  }
+  if (room.phase !== 'TUTORIAL' && room.phase !== 'PLAYING') {
+    // Includes RESULTS / ENDED — late actions cannot change a finished round
+    throw new LogicError('BAD_STATE', 'Game actions not accepted in this phase');
+  }
+  const def = getGame(room.selectedGameId);
+  if (!def?.onAction) {
+    throw new LogicError('BAD_STATE', 'Game does not accept actions');
+  }
+  const result = def.onAction(bindCtx(room, now), playerId, action, payload);
+  if (!result.ok) {
+    throw new LogicError('BAD_STATE', result.error ?? 'Action rejected');
   }
 }
 
 export function tickMovement(room: InternalRoom, dtMs: number, now = Date.now()): void {
   if (room.phase !== 'PLAYING') return;
-  const dt = dtMs / 1000;
-  for (const player of room.players.values()) {
-    if (!player.connected) continue;
-    if (now - player.lastInputAt > STALE_INPUT_MS) {
-      player.direction = 'none';
+  const useMovement =
+    !room.selectedGameId || room.selectedGameId === 'snack-chase';
+  if (useMovement) {
+    const dt = dtMs / 1000;
+    for (const player of room.players.values()) {
+      if (!player.connected) continue;
+      if (now - player.lastInputAt > STALE_INPUT_MS) {
+        player.direction = 'none';
+      }
+      let vx = 0;
+      let vy = 0;
+      switch (player.direction) {
+        case 'up':
+          vy = -PLAYER_SPEED;
+          break;
+        case 'down':
+          vy = PLAYER_SPEED;
+          break;
+        case 'left':
+          vx = -PLAYER_SPEED;
+          break;
+        case 'right':
+          vx = PLAYER_SPEED;
+          break;
+        default:
+          break;
+      }
+      player.x = clamp(player.x + vx * dt, 16, WORLD_WIDTH - 16);
+      player.y = clamp(player.y + vy * dt, 16, WORLD_HEIGHT - 16);
     }
-    let vx = 0;
-    let vy = 0;
-    switch (player.direction) {
-      case 'up':
-        vy = -PLAYER_SPEED;
-        break;
-      case 'down':
-        vy = PLAYER_SPEED;
-        break;
-      case 'left':
-        vx = -PLAYER_SPEED;
-        break;
-      case 'right':
-        vx = PLAYER_SPEED;
-        break;
-      default:
-        break;
-    }
-    player.x = clamp(player.x + vx * dt, 16, WORLD_WIDTH - 16);
-    player.y = clamp(player.y + vy * dt, 16, WORLD_HEIGHT - 16);
   }
   room.tick += 1;
 
   if (room.selectedGameId) {
     const def = getGame(room.selectedGameId);
-    def?.onTick?.(bindCtx(room), dtMs);
+    def?.onTick?.(bindCtx(room, now), dtMs);
   }
 }
 
@@ -604,13 +653,34 @@ export function assertNoCrossPlayerSecrets(
   payload: unknown,
 ): boolean {
   if (!payload || typeof payload !== 'object') return true;
+  const blob = JSON.stringify(payload);
+  // Legacy stub secrets map
   const secrets = (room.gameState as { secrets?: Record<string, string> } | null)
     ?.secrets;
-  if (!secrets) return true;
-  const blob = JSON.stringify(payload);
-  for (const [pid, secret] of Object.entries(secrets)) {
-    if (pid === viewerId) continue;
-    if (secret && blob.includes(secret)) return false;
+  if (secrets) {
+    for (const [pid, secret] of Object.entries(secrets)) {
+      if (pid === viewerId) continue;
+      if (secret && blob.includes(secret)) return false;
+    }
+  }
+  // Confidence Club: submissions map must never leak into private payload for others
+  const submissions = (
+    room.gameState as {
+      submissions?: Record<string, { initialOption?: number | null }>;
+    } | null
+  )?.submissions;
+  if (submissions) {
+    for (const [pid, sub] of Object.entries(submissions)) {
+      if (pid === viewerId) continue;
+      if (
+        sub &&
+        sub.initialOption != null &&
+        blob.includes(`"initialOption":${sub.initialOption}`)
+      ) {
+        // Private payload uses myInitialOption naming — still ensure other player ids absent
+      }
+      if (blob.includes(pid) && pid !== viewerId) return false;
+    }
   }
   return true;
 }
@@ -631,6 +701,18 @@ export function toPublicState(
 
   const games: GameCatalogEntry[] = listGameCatalog();
 
+  let publicGameState: unknown | null = null;
+  if (room.selectedGameId) {
+    const def = getGame(room.selectedGameId);
+    if (def?.getPublicState) {
+      try {
+        publicGameState = def.getPublicState(bindCtx(room));
+      } catch {
+        publicGameState = null;
+      }
+    }
+  }
+
   const state: RoomStatePublic = {
     roomId: room.roomId,
     roomCode: room.roomCode,
@@ -648,6 +730,7 @@ export function toPublicState(
     resumePhase: room.resumePhase,
     games,
     resultsSummary: room.resultsSummary,
+    publicGameState,
   };
 
   if (opts.includeHostCode && room.hostCode) {

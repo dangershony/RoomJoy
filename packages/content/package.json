@@ -1,6 +1,6 @@
 {
   "name": "@roomjoy/content",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
@@ -12,10 +12,17 @@
     }
   },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "dev": "tsc -p tsconfig.json --watch"
+    "build": "tsc -p tsconfig.json && mkdir -p dist/packs && cp src/packs/*.json dist/packs/",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@roomjoy/protocol": "workspace:*",
+    "zod": "3.24.1"
   },
   "devDependencies": {
-    "typescript": "5.7.2"
+    "@types/node": "20.17.10",
+    "typescript": "5.7.2",
+    "vitest": "2.1.8"
   }
 }
