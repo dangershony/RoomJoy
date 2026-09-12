@@ -14,15 +14,26 @@ import {
   attachTv,
   claimHost,
   createRoom,
+  endRound,
   endSessionIfTvTimedOut,
+  getPrivateStateForPlayer,
   joinPhone,
   markPlayerDisconnected,
+  pauseByHost,
   pauseForTvDisconnect,
+  removePlayer,
+  resumeByHost,
   resumeTv,
+  returnToLibrary,
+  selectGame,
+  setContentSettings,
   setJoiningLocked,
   startGame,
+  startRound,
+  startTutorial,
   tickMovement,
   toPublicState,
+  transferHost,
   type InternalRoom,
 } from './logic.js';
 
@@ -42,12 +53,11 @@ export const roomsByCode = new Map<string, RoomJoyRoom>();
 export class RoomJoyRoom extends Room {
   maxClients = 9; // 8 phones + 1 TV
   private logic!: InternalRoom;
-  private wasPlayingBeforePause = false;
   private tickInterval?: ReturnType<typeof setInterval>;
   private recoverInterval?: ReturnType<typeof setInterval>;
 
   onCreate(): void {
-    this.autoDispose = false; // keep alive during TV 60s recover
+    this.autoDispose = false;
     this.logic = createRoom();
     roomsByCode.set(this.logic.roomCode.toUpperCase(), this);
     this.setMetadata({ roomCode: this.logic.roomCode });
@@ -56,28 +66,35 @@ export class RoomJoyRoom extends Room {
       this.handleMessage(client, { ...(message as object), type } as ClientMessage);
     });
 
-    // Also accept typed messages without wildcard
-    this.onMessage('create_tv', (client) =>
-      this.handleMessage(client, { type: 'create_tv' }),
-    );
-    this.onMessage('join_phone', (client, msg) =>
-      this.handleMessage(client, { type: 'join_phone', ...(msg as object) } as ClientMessage),
-    );
-    this.onMessage('claim_host', (client, msg) =>
-      this.handleMessage(client, { type: 'claim_host', ...(msg as object) } as ClientMessage),
-    );
-    this.onMessage('lock_joining', (client, msg) =>
-      this.handleMessage(client, { type: 'lock_joining', ...(msg as object) } as ClientMessage),
-    );
-    this.onMessage('start_game', (client) =>
-      this.handleMessage(client, { type: 'start_game' }),
-    );
-    this.onMessage('input', (client, msg) =>
-      this.handleMessage(client, { type: 'input', ...(msg as object) } as ClientMessage),
-    );
-    this.onMessage('reconnect', (client, msg) =>
-      this.handleMessage(client, { type: 'reconnect', ...(msg as object) } as ClientMessage),
-    );
+    const handlers: Array<[string, boolean]> = [
+      ['create_tv', false],
+      ['join_phone', true],
+      ['claim_host', true],
+      ['lock_joining', true],
+      ['select_game', true],
+      ['set_content_settings', true],
+      ['start_tutorial', false],
+      ['start_round', false],
+      ['pause', false],
+      ['resume', false],
+      ['remove_player', true],
+      ['transfer_host', true],
+      ['return_to_library', false],
+      ['end_round', false],
+      ['start_game', false],
+      ['input', true],
+      ['reconnect', true],
+    ];
+    for (const [name, hasPayload] of handlers) {
+      this.onMessage(name, (client, msg) =>
+        this.handleMessage(
+          client,
+          (hasPayload
+            ? { type: name, ...(msg as object) }
+            : { type: name }) as ClientMessage,
+        ),
+      );
+    }
 
     const tickMs = 1000 / TICK_RATE_HZ;
     this.tickInterval = setInterval(() => {
@@ -116,16 +133,9 @@ export class RoomJoyRoom extends Room {
     (client as Client & { meta: ClientMeta }).meta = meta;
 
     if (meta.role === 'tv') {
-      // Fresh TV create OR reconnect
       const token = options?.sessionToken as string | undefined;
       if (token && token === this.logic.tvSessionToken) {
-        resumeTv(
-          this.logic,
-          client.sessionId,
-          token,
-          this.wasPlayingBeforePause,
-        );
-        this.wasPlayingBeforePause = false;
+        resumeTv(this.logic, client.sessionId, token);
         this.sendWelcome(client, 'tv', undefined, this.logic.tvSessionToken);
         this.broadcastState();
         return;
@@ -136,7 +146,6 @@ export class RoomJoyRoom extends Room {
       return;
     }
 
-    // Phone join
     try {
       const player = joinPhone(this.logic, {
         nickname: String(options?.nickname ?? 'Player'),
@@ -148,10 +157,10 @@ export class RoomJoyRoom extends Room {
       meta.playerId = player.id;
       this.sendWelcome(client, 'phone', player.id, player.sessionToken);
       this.broadcastState();
+      this.sendPrivateToPlayer(player.id);
     } catch (e) {
       const err = e as LogicError;
       this.sendError(client, err.code ?? 'BAD_STATE', err.message);
-      // Kick after short delay so error is delivered
       setTimeout(() => client.leave(4000), 50);
     }
   }
@@ -161,7 +170,6 @@ export class RoomJoyRoom extends Room {
     if (!meta) return;
 
     if (meta.role === 'tv') {
-      this.wasPlayingBeforePause = this.logic.phase === 'PLAYING';
       pauseForTvDisconnect(this.logic);
       this.broadcastState();
       return;
@@ -197,9 +205,85 @@ export class RoomJoyRoom extends Room {
           this.broadcastState();
           break;
         }
+        case 'select_game': {
+          if (!meta.playerId) return;
+          selectGame(this.logic, meta.playerId, msg.gameId);
+          this.broadcastState();
+          this.broadcastPrivateStates();
+          break;
+        }
+        case 'set_content_settings': {
+          if (!meta.playerId) return;
+          setContentSettings(this.logic, meta.playerId, msg.contentMode);
+          this.broadcastState();
+          break;
+        }
+        case 'start_tutorial': {
+          if (!meta.playerId) return;
+          startTutorial(this.logic, meta.playerId);
+          this.broadcastState();
+          this.broadcastPrivateStates();
+          break;
+        }
+        case 'start_round': {
+          if (!meta.playerId) return;
+          startRound(this.logic, meta.playerId);
+          this.broadcastState();
+          this.broadcastPrivateStates();
+          break;
+        }
         case 'start_game': {
           if (!meta.playerId) return;
           startGame(this.logic, meta.playerId);
+          this.broadcastState();
+          this.broadcastPrivateStates();
+          break;
+        }
+        case 'pause': {
+          if (!meta.playerId) return;
+          pauseByHost(this.logic, meta.playerId);
+          this.broadcastState();
+          break;
+        }
+        case 'resume': {
+          if (!meta.playerId) return;
+          resumeByHost(this.logic, meta.playerId);
+          this.broadcastState();
+          break;
+        }
+        case 'remove_player': {
+          if (!meta.playerId) return;
+          const targetId = msg.targetPlayerId;
+          removePlayer(this.logic, meta.playerId, targetId);
+          // Kick target client if connected
+          for (const c of this.clients) {
+            const m = (c as Client & { meta?: ClientMeta }).meta;
+            if (m?.playerId === targetId) {
+              c.send('message', {
+                type: 'session_ended',
+                reason: 'Removed by host',
+              } satisfies ServerMessage);
+              setTimeout(() => c.leave(4001), 50);
+            }
+          }
+          this.broadcastState();
+          break;
+        }
+        case 'transfer_host': {
+          if (!meta.playerId) return;
+          transferHost(this.logic, meta.playerId, msg.targetPlayerId);
+          this.broadcastState();
+          break;
+        }
+        case 'return_to_library': {
+          if (!meta.playerId) return;
+          returnToLibrary(this.logic, meta.playerId);
+          this.broadcastState();
+          break;
+        }
+        case 'end_round': {
+          if (!meta.playerId) return;
+          endRound(this.logic, meta.playerId);
           this.broadcastState();
           break;
         }
@@ -213,10 +297,8 @@ export class RoomJoyRoom extends Room {
           );
           break;
         }
-        case 'reconnect': {
-          // Handled primarily via onJoin options; acknowledge
+        case 'reconnect':
           break;
-        }
         default:
           break;
       }
@@ -233,6 +315,10 @@ export class RoomJoyRoom extends Room {
     sessionToken: string,
   ): void {
     const includeHostCode = role === 'tv' && !this.logic.hostClaimed;
+    const privateState =
+      role === 'phone' && playerId
+        ? getPrivateStateForPlayer(this.logic, playerId)
+        : undefined;
     const welcome: ServerMessage = {
       type: 'welcome',
       role,
@@ -242,6 +328,7 @@ export class RoomJoyRoom extends Room {
       roomCode: this.logic.roomCode,
       hostCode: includeHostCode ? this.logic.hostCode ?? undefined : undefined,
       state: toPublicState(this.logic, { includeHostCode }),
+      privateState: privateState ?? undefined,
     };
     client.send('message', welcome);
   }
@@ -255,6 +342,7 @@ export class RoomJoyRoom extends Room {
     this.broadcast('message', msg);
   }
 
+  /** Public state only — never embed other players' secrets. */
   private broadcastState(): void {
     for (const client of this.clients) {
       const meta = (client as Client & { meta?: ClientMeta }).meta;
@@ -265,6 +353,29 @@ export class RoomJoyRoom extends Room {
         state: toPublicState(this.logic, { includeHostCode }),
       };
       client.send('message', stateMsg);
+    }
+  }
+
+  /** Deliver private payloads only to the owning phone client. */
+  private sendPrivateToPlayer(playerId: string): void {
+    const payload = getPrivateStateForPlayer(this.logic, playerId);
+    if (payload == null) return;
+    for (const client of this.clients) {
+      const meta = (client as Client & { meta?: ClientMeta }).meta;
+      if (meta?.role === 'phone' && meta.playerId === playerId) {
+        const msg: ServerMessage = {
+          type: 'private_state',
+          playerId,
+          payload,
+        };
+        client.send('message', msg);
+      }
+    }
+  }
+
+  private broadcastPrivateStates(): void {
+    for (const p of this.logic.players.values()) {
+      if (p.connected) this.sendPrivateToPlayer(p.id);
     }
   }
 

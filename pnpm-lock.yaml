@@ -20,9 +20,21 @@ importers:
       '@colyseus/ws-transport':
         specifier: 0.15.3
         version: 0.15.3(@colyseus/core@0.15.57(@colyseus/schema@2.0.37))(@colyseus/schema@2.0.37)
+      '@roomjoy/confidence-club':
+        specifier: workspace:*
+        version: link:../../packages/games/confidence-club
+      '@roomjoy/game-sdk':
+        specifier: workspace:*
+        version: link:../../packages/game-sdk
+      '@roomjoy/mixed-signals':
+        specifier: workspace:*
+        version: link:../../packages/games/mixed-signals
       '@roomjoy/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@roomjoy/snack-chase':
+        specifier: workspace:*
+        version: link:../../packages/games/snack-chase
       colyseus:
         specifier: 0.15.57
         version: 0.15.57(@colyseus/schema@2.0.37)(express@4.21.2)

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Client, Room } from 'colyseus.js';
 import type {
   ClientRole,
+  ContentMode,
   Direction,
   RoomStatePublic,
   ServerMessage,
@@ -26,6 +27,8 @@ export interface RoomConnection {
   roomCode: string | null;
   hostCode: string | null;
   state: RoomStatePublic | null;
+  /** Own private payload only — never other players' secrets */
+  privateState: unknown;
   createTv: () => Promise<void>;
   joinPhone: (opts: {
     roomCode: string;
@@ -34,6 +37,16 @@ export interface RoomConnection {
   }) => Promise<void>;
   claimHost: (hostCode: string) => void;
   lockJoining: (locked: boolean) => void;
+  selectGame: (gameId: string) => void;
+  setContentSettings: (contentMode: ContentMode) => void;
+  startTutorial: () => void;
+  startRound: () => void;
+  pause: () => void;
+  resume: () => void;
+  removePlayer: (targetPlayerId: string) => void;
+  transferHost: (targetPlayerId: string) => void;
+  returnToLibrary: () => void;
+  endRound: () => void;
   startGame: () => void;
   sendInput: (direction: Direction) => void;
   tryReconnect: () => Promise<boolean>;
@@ -58,11 +71,17 @@ export function useRoomConnection(): RoomConnection {
   const [roomCode, setRoomCode] = useState<string | null>(null);
   const [hostCode, setHostCode] = useState<string | null>(null);
   const [state, setState] = useState<RoomStatePublic | null>(null);
+  const [privateState, setPrivateState] = useState<unknown>(null);
 
   const clientRef = useRef<Client | null>(null);
   const roomRef = useRef<Room | null>(null);
   const seqRef = useRef(0);
   const intentionalLeave = useRef(false);
+  const playerIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    playerIdRef.current = playerId;
+  }, [playerId]);
 
   const handleServerMessage = useCallback((msg: ServerMessage) => {
     switch (msg.type) {
@@ -73,6 +92,7 @@ export function useRoomConnection(): RoomConnection {
         setRoomCode(msg.roomCode);
         setHostCode(msg.hostCode ?? null);
         setState(msg.state);
+        setPrivateState(msg.privateState ?? null);
         setStatus('connected');
         setError(null);
         saveCreds({
@@ -93,6 +113,12 @@ export function useRoomConnection(): RoomConnection {
         if (msg.state.phase === 'ENDED') {
           setStatus('ended');
           clearCreds();
+        }
+        break;
+      case 'private_state':
+        // Only accept if addressed to us (defense in depth)
+        if (msg.playerId === playerIdRef.current) {
+          setPrivateState(msg.payload);
         }
         break;
       case 'error':
@@ -217,17 +243,42 @@ export function useRoomConnection(): RoomConnection {
     }
   }, [getClient, wireRoom]);
 
-  const claimHost = useCallback((code: string) => {
-    roomRef.current?.send('claim_host', { hostCode: code });
+  const send = useCallback((type: string, payload: object = {}) => {
+    roomRef.current?.send(type, payload);
   }, []);
 
-  const lockJoining = useCallback((locked: boolean) => {
-    roomRef.current?.send('lock_joining', { locked });
-  }, []);
-
-  const startGame = useCallback(() => {
-    roomRef.current?.send('start_game', {});
-  }, []);
+  const claimHost = useCallback(
+    (code: string) => send('claim_host', { hostCode: code }),
+    [send],
+  );
+  const lockJoining = useCallback(
+    (locked: boolean) => send('lock_joining', { locked }),
+    [send],
+  );
+  const selectGame = useCallback(
+    (gameId: string) => send('select_game', { gameId }),
+    [send],
+  );
+  const setContentSettings = useCallback(
+    (contentMode: ContentMode) =>
+      send('set_content_settings', { contentMode }),
+    [send],
+  );
+  const startTutorial = useCallback(() => send('start_tutorial'), [send]);
+  const startRound = useCallback(() => send('start_round'), [send]);
+  const pause = useCallback(() => send('pause'), [send]);
+  const resume = useCallback(() => send('resume'), [send]);
+  const removePlayer = useCallback(
+    (targetPlayerId: string) => send('remove_player', { targetPlayerId }),
+    [send],
+  );
+  const transferHost = useCallback(
+    (targetPlayerId: string) => send('transfer_host', { targetPlayerId }),
+    [send],
+  );
+  const returnToLibrary = useCallback(() => send('return_to_library'), [send]);
+  const endRound = useCallback(() => send('end_round'), [send]);
+  const startGame = useCallback(() => send('start_game'), [send]);
 
   const sendInput = useCallback((direction: Direction) => {
     seqRef.current += 1;
@@ -241,6 +292,7 @@ export function useRoomConnection(): RoomConnection {
     clearCreds();
     setStatus('idle');
     setState(null);
+    setPrivateState(null);
   }, []);
 
   useEffect(() => {
@@ -268,10 +320,21 @@ export function useRoomConnection(): RoomConnection {
     roomCode,
     hostCode,
     state,
+    privateState,
     createTv,
     joinPhone,
     claimHost,
     lockJoining,
+    selectGame,
+    setContentSettings,
+    startTutorial,
+    startRound,
+    pause,
+    resume,
+    removePlayer,
+    transferHost,
+    returnToLibrary,
+    endRound,
     startGame,
     sendInput,
     tryReconnect,

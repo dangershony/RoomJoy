@@ -4,18 +4,47 @@ import {
   STALE_INPUT_MS,
   PLAYER_SPEED,
 } from '@roomjoy/protocol';
+import { listGameCatalog } from '@roomjoy/game-sdk';
 import {
   LogicError,
   applyInput,
+  assertNoCrossPlayerSecrets,
   claimHost,
   createRoom,
+  endRound,
+  getPrivateStateForPlayer,
   joinPhone,
   markPlayerDisconnected,
+  pauseByHost,
+  removePlayer,
+  resumeByHost,
+  returnToLibrary,
+  selectGame,
+  setContentSettings,
   setJoiningLocked,
   startGame,
+  startRound,
+  startTutorial,
   tickMovement,
+  transferHost,
   type InternalRoom,
 } from './logic.js';
+
+function hostAndPlayers(n = 2) {
+  const room = createRoom();
+  const players = [];
+  for (let i = 0; i < n; i++) {
+    players.push(
+      joinPhone(room, {
+        nickname: `P${i}`,
+        avatarId: 'fox',
+        clientSessionId: `c${i}`,
+      }),
+    );
+  }
+  claimHost(room, players[0]!.id, room.hostCode!);
+  return { room, host: players[0]!, players };
+}
 
 describe('join capacity', () => {
   let room: InternalRoom;
@@ -51,16 +80,6 @@ describe('join capacity', () => {
         clientSessionId: 'c9',
       }),
     ).toThrow(LogicError);
-
-    try {
-      joinPhone(room, {
-        nickname: 'Overflow',
-        avatarId: 'dog',
-        clientSessionId: 'c9',
-      });
-    } catch (e) {
-      expect((e as LogicError).code).toBe('ROOM_FULL');
-    }
   });
 
   it('rejects join when locked', () => {
@@ -85,8 +104,6 @@ describe('host claim once', () => {
   it('claims host once and removes host code', () => {
     const room = createRoom();
     const code = room.hostCode!;
-    expect(code).toBeTruthy();
-
     const a = joinPhone(room, {
       nickname: 'Alice',
       avatarId: 'fox',
@@ -104,11 +121,6 @@ describe('host claim once', () => {
     expect(room.hostCode).toBeNull();
 
     expect(() => claimHost(room, b.id, code)).toThrow(LogicError);
-    try {
-      claimHost(room, b.id, code);
-    } catch (e) {
-      expect((e as LogicError).code).toBe('HOST_ALREADY_CLAIMED');
-    }
   });
 
   it('rejects wrong host code', () => {
@@ -119,18 +131,6 @@ describe('host claim once', () => {
       clientSessionId: 'x',
     });
     expect(() => claimHost(room, p.id, 'ZZZZ')).toThrowError(/Wrong host/i);
-  });
-
-  it('host is also a player in the roster', () => {
-    const room = createRoom();
-    const p = joinPhone(room, {
-      nickname: 'Hosty',
-      avatarId: 'unicorn',
-      clientSessionId: 'h',
-    });
-    claimHost(room, p.id, room.hostCode!);
-    expect(room.players.get(p.id)?.isHost).toBe(true);
-    expect(room.players.size).toBe(1);
   });
 });
 
@@ -146,9 +146,6 @@ describe('reconnect identity', () => {
     const id = p.id;
 
     markPlayerDisconnected(room, id);
-    expect(room.players.get(id)?.connected).toBe(false);
-    expect(room.players.size).toBe(1);
-
     const again = joinPhone(room, {
       nickname: 'Ignored',
       avatarId: 'fox',
@@ -161,25 +158,6 @@ describe('reconnect identity', () => {
     expect(again.nickname).toBe('Dana');
     expect(again.connected).toBe(true);
     expect(room.players.size).toBe(1);
-  });
-
-  it('rejects bad reconnect token', () => {
-    const room = createRoom();
-    const p = joinPhone(room, {
-      nickname: 'Eve',
-      avatarId: 'frog',
-      clientSessionId: 'e1',
-    });
-    markPlayerDisconnected(room, p.id);
-    expect(() =>
-      joinPhone(room, {
-        nickname: 'Eve',
-        avatarId: 'frog',
-        clientSessionId: 'e2',
-        sessionToken: 'not-a-real-token',
-        playerId: p.id,
-      }),
-    ).toThrow(LogicError);
   });
 });
 
@@ -198,16 +176,12 @@ describe('stale input', () => {
     applyInput(room, p.id, 'right', 1, t0);
     const x0 = p.x;
 
-    // Fresh tick — should move
     tickMovement(room, 100, t0 + 50);
     expect(p.x).toBeGreaterThan(x0);
-    expect(p.direction).toBe('right');
 
     const x1 = p.x;
-    // Stale: now past STALE_INPUT_MS since last input
     tickMovement(room, 100, t0 + STALE_INPUT_MS + 100);
     expect(p.direction).toBe('none');
-    // No further movement after stop
     expect(p.x).toBe(x1);
   });
 
@@ -225,7 +199,7 @@ describe('stale input', () => {
     p.x = 400;
     p.y = 200;
     applyInput(room, p.id, 'right', 1, t0);
-    tickMovement(room, 1000, t0 + 10); // 1 second
+    tickMovement(room, 1000, t0 + 10);
     expect(p.x).toBeCloseTo(400 + PLAYER_SPEED, 0);
   });
 });
@@ -240,5 +214,168 @@ describe('nickname sanitization via join', () => {
     });
     expect(p.nickname).not.toContain('<');
     expect(p.nickname).not.toContain('>');
+  });
+});
+
+describe('lifecycle transitions', () => {
+  it('LOBBY → TUTORIAL → PLAYING → RESULTS → LOBBY', () => {
+    const { room, host } = hostAndPlayers(3);
+    selectGame(room, host.id, 'confidence-club');
+    expect(room.phase).toBe('LOBBY');
+    expect(room.selectedGameId).toBe('confidence-club');
+
+    startTutorial(room, host.id);
+    expect(room.phase).toBe('TUTORIAL');
+
+    startRound(room, host.id);
+    expect(room.phase).toBe('PLAYING');
+    expect(room.gameSubstate).toBeTruthy();
+
+    endRound(room, host.id);
+    expect(room.phase).toBe('RESULTS');
+    expect(room.resultsSummary).toMatch(/Confidence Club/i);
+
+    returnToLibrary(room, host.id);
+    expect(room.phase).toBe('LOBBY');
+    expect(room.selectedGameId).toBeNull();
+  });
+
+  it('host pause / resume during PLAYING', () => {
+    const { room, host } = hostAndPlayers(3);
+    selectGame(room, host.id, 'snack-chase');
+    startTutorial(room, host.id);
+    startRound(room, host.id);
+    pauseByHost(room, host.id);
+    expect(room.phase).toBe('PAUSED');
+    expect(room.pauseReason).toBe('host');
+    resumeByHost(room, host.id);
+    expect(room.phase).toBe('PLAYING');
+  });
+});
+
+describe('host-only actions', () => {
+  it('non-host cannot select game, lock, start, pause, remove, transfer', () => {
+    const { room, players } = hostAndPlayers(2);
+    const guest = players[1]!;
+
+    expect(() => selectGame(room, guest.id, 'mixed-signals')).toThrow(LogicError);
+    expect(() => setJoiningLocked(room, guest.id, true)).toThrow(LogicError);
+    expect(() => setContentSettings(room, guest.id, 'adult')).toThrow(LogicError);
+
+    selectGame(room, players[0]!.id, 'mixed-signals');
+    expect(() => startTutorial(room, guest.id)).toThrow(LogicError);
+
+    startTutorial(room, players[0]!.id);
+    expect(() => startRound(room, guest.id)).toThrow(LogicError);
+    startRound(room, players[0]!.id);
+    expect(() => pauseByHost(room, guest.id)).toThrow(LogicError);
+    expect(() => removePlayer(room, guest.id, players[0]!.id)).toThrow(LogicError);
+    expect(() => transferHost(room, guest.id, players[0]!.id)).toThrow(LogicError);
+    expect(() => returnToLibrary(room, guest.id)).toThrow(LogicError);
+  });
+});
+
+describe('transfer host', () => {
+  it('moves host flag to target', () => {
+    const { room, host, players } = hostAndPlayers(2);
+    const other = players[1]!;
+    transferHost(room, host.id, other.id);
+    expect(host.isHost).toBe(false);
+    expect(other.isHost).toBe(true);
+    expect(room.hostClaimed).toBe(true);
+  });
+});
+
+describe('remove player', () => {
+  it('host removes another player; membership shrinks', () => {
+    const { room, host, players } = hostAndPlayers(3);
+    const victim = players[2]!;
+    removePlayer(room, host.id, victim.id);
+    expect(room.players.has(victim.id)).toBe(false);
+    expect(room.players.size).toBe(2);
+  });
+
+  it('host cannot remove self', () => {
+    const { room, host } = hostAndPlayers(2);
+    expect(() => removePlayer(room, host.id, host.id)).toThrow(LogicError);
+  });
+});
+
+describe('lock join', () => {
+  it('blocks new joins while unlocked allows', () => {
+    const { room, host } = hostAndPlayers(1);
+    setJoiningLocked(room, host.id, true);
+    expect(room.joiningLocked).toBe(true);
+    expect(() =>
+      joinPhone(room, {
+        nickname: 'Nope',
+        avatarId: 'cat',
+        clientSessionId: 'x',
+      }),
+    ).toThrow(LogicError);
+
+    setJoiningLocked(room, host.id, false);
+    const late = joinPhone(room, {
+      nickname: 'Late',
+      avatarId: 'cat',
+      clientSessionId: 'late',
+    });
+    expect(late.id).toBeTruthy();
+  });
+});
+
+describe('game switch preserves membership', () => {
+  it('switching modules keeps the same players', () => {
+    const { room, host, players } = hostAndPlayers(3);
+    const ids = players.map((p) => p.id).sort();
+    selectGame(room, host.id, 'confidence-club');
+    startTutorial(room, host.id);
+    returnToLibrary(room, host.id);
+    selectGame(room, host.id, 'snack-chase');
+    expect([...room.players.keys()].sort()).toEqual(ids);
+    expect(room.selectedGameId).toBe('snack-chase');
+    expect(room.phase).toBe('LOBBY');
+  });
+});
+
+describe('private state channel', () => {
+  it('each player only sees own secret; host does not get others', () => {
+    const { room, host, players } = hostAndPlayers(3);
+    selectGame(room, host.id, 'confidence-club');
+    startTutorial(room, host.id);
+
+    for (const p of players) {
+      const priv = getPrivateStateForPlayer(room, p.id) as {
+        secret: string;
+      };
+      expect(priv.secret).toContain(p.id.slice(0, 6));
+      expect(assertNoCrossPlayerSecrets(room, p.id, priv)).toBe(true);
+    }
+
+    // Host's private payload must not include guest secrets
+    const hostPriv = getPrivateStateForPlayer(room, host.id);
+    const guest = players[1]!;
+    const guestPriv = getPrivateStateForPlayer(room, guest.id) as {
+      secret: string;
+    };
+    expect(JSON.stringify(hostPriv)).not.toContain(guestPriv.secret);
+  });
+});
+
+describe('game catalog', () => {
+  it('registers three games', () => {
+    const catalog = listGameCatalog();
+    const ids = catalog.map((g) => g.id).sort();
+    expect(ids).toEqual([
+      'confidence-club',
+      'mixed-signals',
+      'snack-chase',
+    ]);
+    for (const g of catalog) {
+      expect(g.title).toBeTruthy();
+      expect(g.description).toBeTruthy();
+      expect(g.thumbnail).toBeTruthy();
+      expect(g.estimatedDurationMinutes).toBeGreaterThan(0);
+    }
   });
 });

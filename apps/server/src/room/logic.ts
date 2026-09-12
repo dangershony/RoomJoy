@@ -1,21 +1,31 @@
 /**
- * Pure authoritative room logic for RoomJoy M1.
+ * Pure authoritative room logic for RoomJoy M2.
  * No Colyseus / network deps — unit-tested with Vitest.
  */
 import {
   Direction,
   MAX_PLAYERS,
   PLAYER_SPEED,
-  RoomPhase,
   STALE_INPUT_MS,
   TV_RECOVER_MS,
   WORLD_HEIGHT,
   WORLD_WIDTH,
   isValidAvatarId,
   sanitizeNickname,
+  type ContentMode,
+  type GameCatalogEntry,
+  type PauseReason,
   type PlayerPublic,
+  type RoomPhase,
   type RoomStatePublic,
 } from '@roomjoy/protocol';
+import {
+  getGame,
+  listGameCatalog,
+  makeGameContext,
+  type GameDefinition,
+  type GamePlayer,
+} from '@roomjoy/game-sdk';
 import {
   generateHostCode,
   generatePlayerId,
@@ -31,7 +41,6 @@ export interface InternalPlayer {
   isHost: boolean;
   connected: boolean;
   sessionToken: string;
-  /** Colyseus session id when connected */
   clientSessionId?: string;
   x: number;
   y: number;
@@ -55,6 +64,14 @@ export interface InternalRoom {
   tvRecoverDeadline: number | null;
   tick: number;
   createdAt: number;
+  selectedGameId: string | null;
+  contentMode: ContentMode;
+  gameSubstate: string | null;
+  /** Opaque per-game state (server-only; secrets live here) */
+  gameState: unknown;
+  pauseReason: PauseReason | null;
+  resumePhase: RoomPhase | null;
+  resultsSummary: string | null;
 }
 
 export type LogicErrorCode =
@@ -68,7 +85,11 @@ export type LogicErrorCode =
   | 'INVALID_TOKEN'
   | 'PLAYER_NOT_FOUND'
   | 'BAD_STATE'
-  | 'RATE_LIMITED';
+  | 'RATE_LIMITED'
+  | 'UNKNOWN_GAME'
+  | 'TOO_FEW_PLAYERS'
+  | 'CANNOT_REMOVE_SELF'
+  | 'TARGET_NOT_FOUND';
 
 export class LogicError extends Error {
   constructor(
@@ -96,7 +117,64 @@ export function createRoom(now = Date.now()): InternalRoom {
     tvRecoverDeadline: null,
     tick: 0,
     createdAt: now,
+    selectedGameId: null,
+    contentMode: 'family',
+    gameSubstate: null,
+    gameState: null,
+    pauseReason: null,
+    resumePhase: null,
+    resultsSummary: null,
   };
+}
+
+function requireHost(room: InternalRoom, playerId: string): InternalPlayer {
+  const player = room.players.get(playerId);
+  if (!player?.isHost) {
+    throw new LogicError('NOT_HOST', 'Only host can do that');
+  }
+  return player;
+}
+
+function gamePlayers(room: InternalRoom): GamePlayer[] {
+  return [...room.players.values()].map((p) => ({
+    id: p.id,
+    nickname: p.nickname,
+    avatarId: p.avatarId,
+    isHost: p.isHost,
+  }));
+}
+
+function bindCtx(room: InternalRoom) {
+  return makeGameContext({
+    phase: room.phase,
+    contentMode: room.contentMode,
+    players: gamePlayers(room),
+    getState: () => room.gameState,
+    setState: (s) => {
+      room.gameState = s;
+    },
+    setSubstate: (s) => {
+      room.gameSubstate = s;
+    },
+  });
+}
+
+function cleanupSelectedGame(room: InternalRoom): void {
+  if (!room.selectedGameId) {
+    room.gameState = null;
+    room.gameSubstate = null;
+    return;
+  }
+  const def = getGame(room.selectedGameId);
+  if (def?.cleanup) {
+    try {
+      def.cleanup(bindCtx(room));
+    } catch {
+      // ignore cleanup errors in stubs
+    }
+  }
+  room.gameState = null;
+  room.gameSubstate = null;
 }
 
 export function attachTv(
@@ -107,24 +185,21 @@ export function attachTv(
   room.tvConnected = true;
   room.tvDisconnectedAt = null;
   room.tvRecoverDeadline = null;
-  if (room.phase === 'PAUSED') {
-    room.phase = room.players.size > 0 ? 'PLAYING' : 'LOBBY';
-    // If we were in PLAYING before pause, resume PLAYING; track via prior phase is complex —
-    // M1: if any players and was paused from playing, resume PLAYING if host already started.
-    // Simpler: store nothing — resume to LOBBY unless we set a flag. See resumeAfterTvRecover.
-  }
   return { sessionToken: room.tvSessionToken };
 }
 
-/** Mark that game had started before TV pause so we resume correctly. */
 export function pauseForTvDisconnect(room: InternalRoom, now = Date.now()): void {
   if (!room.tvConnected) return;
   room.tvConnected = false;
   room.tvClientSessionId = null;
   room.tvDisconnectedAt = now;
   room.tvRecoverDeadline = now + TV_RECOVER_MS;
-  if (room.phase === 'PLAYING' || room.phase === 'LOBBY') {
+  if (room.phase !== 'PAUSED' && room.phase !== 'ENDED') {
+    room.resumePhase = room.phase;
+    room.pauseReason = 'tv';
     room.phase = 'PAUSED';
+    const def = room.selectedGameId ? getGame(room.selectedGameId) : undefined;
+    def?.onPause?.(bindCtx(room));
   }
 }
 
@@ -132,7 +207,6 @@ export function resumeTv(
   room: InternalRoom,
   clientSessionId: string,
   sessionToken: string,
-  wasPlaying: boolean,
 ): void {
   if (sessionToken !== room.tvSessionToken) {
     throw new LogicError('INVALID_TOKEN', 'Invalid TV session token');
@@ -141,8 +215,13 @@ export function resumeTv(
   room.tvConnected = true;
   room.tvDisconnectedAt = null;
   room.tvRecoverDeadline = null;
-  if (room.phase === 'PAUSED') {
-    room.phase = wasPlaying ? 'PLAYING' : 'LOBBY';
+  if (room.phase === 'PAUSED' && room.pauseReason === 'tv') {
+    const next = room.resumePhase ?? 'LOBBY';
+    room.phase = next;
+    room.pauseReason = null;
+    room.resumePhase = null;
+    const def = room.selectedGameId ? getGame(room.selectedGameId) : undefined;
+    def?.onResume?.(bindCtx(room));
   }
 }
 
@@ -152,6 +231,7 @@ export function endSessionIfTvTimedOut(
 ): boolean {
   if (
     room.phase === 'PAUSED' &&
+    room.pauseReason === 'tv' &&
     room.tvRecoverDeadline != null &&
     now >= room.tvRecoverDeadline
   ) {
@@ -172,13 +252,9 @@ export function joinPhone(
   },
   now = Date.now(),
 ): InternalPlayer {
-  // Reconnect path
   if (opts.sessionToken && opts.playerId) {
     const existing = room.players.get(opts.playerId);
-    if (
-      existing &&
-      existing.sessionToken === opts.sessionToken
-    ) {
+    if (existing && existing.sessionToken === opts.sessionToken) {
       existing.connected = true;
       existing.clientSessionId = opts.clientSessionId;
       return existing;
@@ -194,15 +270,9 @@ export function joinPhone(
     throw new LogicError('BAD_STATE', 'Session has ended');
   }
 
-  const connectedCount = [...room.players.values()].filter((p) => p.connected)
-    .length;
-  // Capacity counts all player slots (including disconnected holding seats during reconnect window)
   if (room.players.size >= MAX_PLAYERS) {
-    // Allow reclaim of disconnected seat only via token above
     throw new LogicError('ROOM_FULL', `Room is full (max ${MAX_PLAYERS} phones)`);
   }
-
-  void connectedCount;
 
   if (!isValidAvatarId(opts.avatarId)) {
     throw new LogicError('INVALID_AVATAR', 'Unknown avatar preset');
@@ -249,7 +319,7 @@ export function claimHost(
   }
   player.isHost = true;
   room.hostClaimed = true;
-  room.hostCode = null; // remove code after claim
+  room.hostCode = null;
   return player;
 }
 
@@ -258,25 +328,188 @@ export function setJoiningLocked(
   playerId: string,
   locked: boolean,
 ): void {
-  const player = room.players.get(playerId);
-  if (!player?.isHost) {
-    throw new LogicError('NOT_HOST', 'Only host can lock joining');
-  }
+  requireHost(room, playerId);
   room.joiningLocked = locked;
 }
 
-export function startGame(room: InternalRoom, playerId: string): void {
-  const player = room.players.get(playerId);
-  if (!player?.isHost) {
-    throw new LogicError('NOT_HOST', 'Only host can start');
+export function selectGame(
+  room: InternalRoom,
+  playerId: string,
+  gameId: string,
+): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'LOBBY' && room.phase !== 'RESULTS') {
+    throw new LogicError('BAD_STATE', 'Can only select game from lobby or results');
   }
+  const def = getGame(gameId);
+  if (!def) {
+    throw new LogicError('UNKNOWN_GAME', `Unknown game: ${gameId}`);
+  }
+  // Switching games preserves membership — cleanup prior module only
+  if (room.selectedGameId && room.selectedGameId !== gameId) {
+    cleanupSelectedGame(room);
+  }
+  room.selectedGameId = gameId;
+  room.gameState = def.createInitialState?.(room.contentMode) ?? null;
+  room.gameSubstate = null;
+  room.resultsSummary = null;
+  room.phase = 'LOBBY';
+}
+
+export function setContentSettings(
+  room: InternalRoom,
+  playerId: string,
+  contentMode: ContentMode,
+): void {
+  requireHost(room, playerId);
+  if (contentMode !== 'family' && contentMode !== 'adult') {
+    throw new LogicError('BAD_STATE', 'Invalid content mode');
+  }
+  room.contentMode = contentMode;
+}
+
+export function startTutorial(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'LOBBY') {
+    throw new LogicError('BAD_STATE', 'Tutorial starts from lobby');
+  }
+  if (!room.selectedGameId) {
+    throw new LogicError('BAD_STATE', 'Select a game first');
+  }
+  if (!room.tvConnected) {
+    throw new LogicError('BAD_STATE', 'TV must be connected');
+  }
+  const def = requireGameDef(room.selectedGameId);
+  const connected = [...room.players.values()].filter((p) => p.connected).length;
+  if (connected < def.minPlayers) {
+    throw new LogicError(
+      'TOO_FEW_PLAYERS',
+      `Need at least ${def.minPlayers} connected players`,
+    );
+  }
+  room.phase = 'TUTORIAL';
+  room.resultsSummary = null;
+  def.onTutorialStart?.(bindCtx(room));
+}
+
+export function startRound(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'TUTORIAL' && room.phase !== 'LOBBY') {
+    throw new LogicError('BAD_STATE', 'Round starts from tutorial (or lobby)');
+  }
+  if (!room.selectedGameId) {
+    throw new LogicError('BAD_STATE', 'Select a game first');
+  }
+  if (!room.tvConnected) {
+    throw new LogicError('BAD_STATE', 'TV must be connected');
+  }
+  const def = requireGameDef(room.selectedGameId);
+  // Allow LOBBY → PLAYING only if already had tutorial skipped? Spec: TUTORIAL → PLAYING.
+  // Host "start round" from TUTORIAL; also allow from LOBBY after select for convenience stub.
+  room.phase = 'PLAYING';
+  room.resultsSummary = null;
+  def.onRoundStart?.(bindCtx(room));
+}
+
+/** M1 compat: lobby → tutorial shortcut then host uses start_round; or direct playing for demo. */
+export function startGame(room: InternalRoom, playerId: string): void {
+  // Prefer full lifecycle: if game selected, start tutorial; else snack-chase demo path
+  requireHost(room, playerId);
   if (room.phase !== 'LOBBY') {
     throw new LogicError('BAD_STATE', 'Can only start from lobby');
   }
   if (!room.tvConnected) {
     throw new LogicError('BAD_STATE', 'TV must be connected');
   }
-  room.phase = 'PLAYING';
+  if (!room.selectedGameId) {
+    // Legacy M1 demo: jump straight to PLAYING without a registered game
+    room.phase = 'PLAYING';
+    room.gameSubstate = 'demo_move';
+    return;
+  }
+  startTutorial(room, playerId);
+}
+
+export function pauseByHost(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'TUTORIAL' && room.phase !== 'PLAYING') {
+    throw new LogicError('BAD_STATE', 'Can only pause during tutorial or play');
+  }
+  room.resumePhase = room.phase;
+  room.pauseReason = 'host';
+  room.phase = 'PAUSED';
+  const def = room.selectedGameId ? getGame(room.selectedGameId) : undefined;
+  def?.onPause?.(bindCtx(room));
+}
+
+export function resumeByHost(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'PAUSED' || room.pauseReason !== 'host') {
+    throw new LogicError('BAD_STATE', 'Not paused by host');
+  }
+  room.phase = room.resumePhase ?? 'PLAYING';
+  room.pauseReason = null;
+  room.resumePhase = null;
+  const def = room.selectedGameId ? getGame(room.selectedGameId) : undefined;
+  def?.onResume?.(bindCtx(room));
+}
+
+export function endRound(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  if (room.phase !== 'PLAYING' && room.phase !== 'TUTORIAL') {
+    throw new LogicError('BAD_STATE', 'Can only end round from play/tutorial');
+  }
+  const def = room.selectedGameId ? getGame(room.selectedGameId) : undefined;
+  const result = def?.onEnd?.(bindCtx(room));
+  room.phase = 'RESULTS';
+  room.gameSubstate = null;
+  room.resultsSummary = result?.summary ?? 'Round complete (placeholder).';
+}
+
+export function returnToLibrary(room: InternalRoom, playerId: string): void {
+  requireHost(room, playerId);
+  cleanupSelectedGame(room);
+  room.selectedGameId = null;
+  room.resultsSummary = null;
+  room.pauseReason = null;
+  room.resumePhase = null;
+  room.phase = 'LOBBY';
+}
+
+export function removePlayer(
+  room: InternalRoom,
+  hostPlayerId: string,
+  targetPlayerId: string,
+): void {
+  requireHost(room, hostPlayerId);
+  if (hostPlayerId === targetPlayerId) {
+    throw new LogicError('CANNOT_REMOVE_SELF', 'Host cannot remove themselves');
+  }
+  const target = room.players.get(targetPlayerId);
+  if (!target) {
+    throw new LogicError('TARGET_NOT_FOUND', 'Player not found');
+  }
+  room.players.delete(targetPlayerId);
+}
+
+export function transferHost(
+  room: InternalRoom,
+  hostPlayerId: string,
+  targetPlayerId: string,
+): void {
+  requireHost(room, hostPlayerId);
+  const target = room.players.get(targetPlayerId);
+  if (!target) {
+    throw new LogicError('TARGET_NOT_FOUND', 'Player not found');
+  }
+  if (!target.connected) {
+    throw new LogicError('BAD_STATE', 'Target must be connected');
+  }
+  const host = room.players.get(hostPlayerId)!;
+  host.isHost = false;
+  target.isHost = true;
+  room.hostClaimed = true;
+  room.hostCode = null;
 }
 
 export function applyInput(
@@ -288,10 +521,15 @@ export function applyInput(
 ): void {
   const player = room.players.get(playerId);
   if (!player || !player.connected) return;
-  if (seq < player.inputSeq) return; // ignore out-of-order
+  if (seq < player.inputSeq) return;
   player.inputSeq = seq;
   player.direction = direction;
   player.lastInputAt = now;
+
+  if (room.phase === 'PLAYING' && room.selectedGameId) {
+    const def = getGame(room.selectedGameId);
+    def?.onInput?.(bindCtx(room), playerId, direction);
+  }
 }
 
 export function tickMovement(room: InternalRoom, dtMs: number, now = Date.now()): void {
@@ -299,7 +537,6 @@ export function tickMovement(room: InternalRoom, dtMs: number, now = Date.now())
   const dt = dtMs / 1000;
   for (const player of room.players.values()) {
     if (!player.connected) continue;
-    // Stale input → stop
     if (now - player.lastInputAt > STALE_INPUT_MS) {
       player.direction = 'none';
     }
@@ -325,6 +562,11 @@ export function tickMovement(room: InternalRoom, dtMs: number, now = Date.now())
     player.y = clamp(player.y + vy * dt, 16, WORLD_HEIGHT - 16);
   }
   room.tick += 1;
+
+  if (room.selectedGameId) {
+    const def = getGame(room.selectedGameId);
+    def?.onTick?.(bindCtx(room), dtMs);
+  }
 }
 
 export function markPlayerDisconnected(
@@ -336,6 +578,41 @@ export function markPlayerDisconnected(
   player.connected = false;
   player.clientSessionId = undefined;
   player.direction = 'none';
+}
+
+/**
+ * Private payload for one player only.
+ * Host must not receive other players' secrets — callers must only send to that playerId.
+ */
+export function getPrivateStateForPlayer(
+  room: InternalRoom,
+  playerId: string,
+): unknown {
+  if (!room.selectedGameId) return null;
+  const def = getGame(room.selectedGameId);
+  if (!def?.getPrivateState) return null;
+  if (!room.players.has(playerId)) return null;
+  return def.getPrivateState(bindCtx(room), playerId);
+}
+
+/**
+ * Assert helper for tests: host private view never includes other secrets map.
+ */
+export function assertNoCrossPlayerSecrets(
+  room: InternalRoom,
+  viewerId: string,
+  payload: unknown,
+): boolean {
+  if (!payload || typeof payload !== 'object') return true;
+  const secrets = (room.gameState as { secrets?: Record<string, string> } | null)
+    ?.secrets;
+  if (!secrets) return true;
+  const blob = JSON.stringify(payload);
+  for (const [pid, secret] of Object.entries(secrets)) {
+    if (pid === viewerId) continue;
+    if (secret && blob.includes(secret)) return false;
+  }
+  return true;
 }
 
 export function toPublicState(
@@ -352,6 +629,8 @@ export function toPublicState(
     y: Math.round(p.y * 10) / 10,
   }));
 
+  const games: GameCatalogEntry[] = listGameCatalog();
+
   const state: RoomStatePublic = {
     roomId: room.roomId,
     roomCode: room.roomCode,
@@ -362,6 +641,13 @@ export function toPublicState(
     capacity: MAX_PLAYERS,
     tvConnected: room.tvConnected,
     tick: room.tick,
+    selectedGameId: room.selectedGameId,
+    contentMode: room.contentMode,
+    gameSubstate: room.gameSubstate,
+    pauseReason: room.pauseReason,
+    resumePhase: room.resumePhase,
+    games,
+    resultsSummary: room.resultsSummary,
   };
 
   if (opts.includeHostCode && room.hostCode) {
@@ -371,6 +657,12 @@ export function toPublicState(
     state.tvRecoverDeadline = room.tvRecoverDeadline;
   }
   return state;
+}
+
+function requireGameDef(gameId: string): GameDefinition {
+  const def = getGame(gameId);
+  if (!def) throw new LogicError('UNKNOWN_GAME', `Unknown game: ${gameId}`);
+  return def;
 }
 
 function clamp(n: number, min: number, max: number): number {

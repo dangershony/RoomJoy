@@ -1,6 +1,6 @@
 {
   "name": "roomjoy",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "RoomJoy \u2014 Good company. Clever games. TV+phone multiplayer.",
   "engines": {
@@ -11,7 +11,7 @@
     "dev": "pnpm -r --parallel --filter @roomjoy/server --filter @roomjoy/web run dev",
     "build": "pnpm -r --filter=./packages/** --filter=./apps/** run build",
     "test": "pnpm --filter @roomjoy/server run test",
-    "lint": "echo \"No lint configured for M1\""
+    "lint": "echo \"No lint configured for M2\""
   },
   "devDependencies": {
     "typescript": "5.7.2"

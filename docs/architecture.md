@@ -1,65 +1,60 @@
-# Architecture (Milestone 1)
+# Architecture (Milestone 2)
 
 ## Overview
 
-RoomJoy M1 is an **authoritative Colyseus room** with a React TV display client and phone controller clients. Clients never decide positions or scores; they send intents (join, host claim, lock, start, direction input). The server owns phase, roster, and simulation.
+RoomJoy is an **authoritative Colyseus room** with a React TV display and phone controllers. Clients send intents; the server owns phase, roster, game module selection, and simulation stubs.
 
 ```
 ┌─────────────┐     WebSocket      ┌──────────────────┐
 │  TV (web)   │◄──────────────────►│  Colyseus server │
 └─────────────┘                    │  RoomJoyRoom     │
-┌─────────────┐                    │  + pure logic.ts │
-│ Phone (web) │◄──────────────────►│  (in-memory)     │
-└─────────────┘                    └──────────────────┘
+┌─────────────┐   public state     │  + logic.ts     │
+│ Phone (web) │◄──────────────────►│  + game-sdk mods │
+└─────────────┘   + private_state  └──────────────────┘
+                  (own secrets only)
 ```
 
 ## Roles & permissions
 
-| Role   | How                         | Can do                                      |
-|--------|-----------------------------|---------------------------------------------|
-| TV     | `create('roomjoy', {role:tv})` | Display QR, codes, lobby, playfield; reconnect with TV session token |
-| Phone  | Join by room code           | Nickname + avatar; input; claim host once with host code |
-| Host   | Phone who claimed host code | Lock joining, start game; still a normal player |
+| Role | How | Can do |
+|------|-----|--------|
+| Display (TV) | `create('roomjoy', {role:tv})` | QR, codes, library reflection, phase screens; reconnect with TV token |
+| Player (phone) | Join by room code | Nickname + avatar; inputs; see own private tip |
+| Host (phone) | Claimed host code (once) or transfer | Select game, content mode, tutorial/round, pause/resume, lock, remove, transfer, library |
 
 Capacity: **8 phones + 1 TV**. Session tokens are random (`nanoid`) and **not** derivable from the room code.
 
+Host must **not** receive other players' secrets. Private payloads go only on the `private_state` channel to the owning `playerId`.
+
 ## Room phases
 
-`LOBBY` → `PLAYING` → (`PAUSED` if TV drops) → `ENDED` (TV not back within 60s) or resume.
+`LOBBY` → `TUTORIAL` → `PLAYING` → `RESULTS` → `LOBBY`
 
-## Simulation
+Also: `PAUSED` (host or TV disconnect) with `resumePhase` / `pauseReason`; `ENDED` if TV recover window (60s) expires.
 
-- Tick rate 20 Hz.
-- Phones send `{ direction, seq }`.
-- If no input for `STALE_INPUT_MS` (200ms), direction becomes `none`.
-- TV renders with client-side interpolation toward authoritative `(x,y)`.
+## Game registration
+
+`@roomjoy/game-sdk` `registerGame(GameDefinition)`. Catalog appears in public state and `GET /api/games`. Switching games cleans module state but **preserves room membership**.
+
+## Simulation / stubs
+
+- Tick rate 20 Hz (movement demo still used for Snack Chase / legacy start).
+- Stale phone input (`STALE_INPUT_MS`) stops movement.
+- Full game rules are out of scope for M2 — stubs only.
 
 ## Trust boundaries
 
-- Sanitize nicknames (`sanitizeNickname`).
-- Validate avatar IDs against presets.
-- Rate-limit joins (per client key).
-- Ignore client positions/scores (none accepted).
+- Sanitize nicknames; validate avatars; rate-limit joins.
 - Host actions require `player.isHost`.
+- Ignore client-authored positions/scores/secrets.
 
 ## Packages
 
-- `@roomjoy/protocol` — shared contracts.
-- `@roomjoy/game-sdk` — future `registerGame` hooks (stub).
-- `@roomjoy/content` — decks/prompts (stub).
-- Game packages only register metadata for M1.
+- `@roomjoy/protocol` — shared contracts (M2 lifecycle + catalog)
+- `@roomjoy/game-sdk` — registration + hooks
+- `@roomjoy/confidence-club` / `mixed-signals` / `snack-chase` — stubs
+- `@roomjoy/content` — decks/prompts (stub)
 
-## Deploy (Render + static)
+## Deploy
 
-1. **Build**: `pnpm install && pnpm build`.
-2. **API service (Render Web Service)**  
-   - Root: monorepo  
-   - Build: `pnpm install && pnpm build`  
-   - Start: `pnpm --filter @roomjoy/server start`  
-   - Env: `PORT`, `NODE_ENV=production`, `HOST=0.0.0.0`
-3. **Static site**  
-   - Build `apps/web` with `VITE_SERVER_URL=wss://YOUR_API` and `VITE_PUBLIC_WEB_URL=https://YOUR_WEB`.  
-   - Publish `apps/web/dist`.
-4. Ensure WebSocket upgrade is enabled on the API host.
-
-Rooms are **in-memory** only — a server restart ends sessions (acceptable for M1).
+See [deploy-vps.md](./deploy-vps.md). Rooms are in-memory — restarts end sessions.

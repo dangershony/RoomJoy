@@ -1,6 +1,6 @@
 {
   "name": "@roomjoy/server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -12,7 +12,11 @@
   "dependencies": {
     "@colyseus/core": "0.15.57",
     "@colyseus/ws-transport": "0.15.3",
+    "@roomjoy/confidence-club": "workspace:*",
+    "@roomjoy/game-sdk": "workspace:*",
+    "@roomjoy/mixed-signals": "workspace:*",
     "@roomjoy/protocol": "workspace:*",
+    "@roomjoy/snack-chase": "workspace:*",
     "colyseus": "0.15.57",
     "cors": "2.8.5",
     "express": "4.21.2",

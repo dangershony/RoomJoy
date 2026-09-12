@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AVATAR_PRESETS } from '@roomjoy/protocol';
+import { AVATAR_PRESETS, type Direction } from '@roomjoy/protocol';
 import { useRoomConnection } from '../hooks/useRoomConnection';
 import { PlayerList } from '../components/PlayerList';
-import type { Direction } from '@roomjoy/protocol';
+import { GameLibrary } from '../components/GameLibrary';
+import { PhaseStub } from '../components/PhaseStub';
+import { getAvatar } from '@roomjoy/protocol';
 
 export function JoinPage() {
   const { code: codeParam } = useParams();
@@ -20,6 +22,12 @@ export function JoinPage() {
     [conn.state, conn.playerId],
   );
 
+  const selectedMeta = useMemo(() => {
+    const id = conn.state?.selectedGameId;
+    if (!id) return null;
+    return conn.state?.games.find((g) => g.id === id) ?? null;
+  }, [conn.state]);
+
   if (conn.status === 'reconnecting') {
     return (
       <PhoneShell>
@@ -35,7 +43,13 @@ export function JoinPage() {
       <PhoneShell>
         <h1>Session ended</h1>
         <p>{conn.error}</p>
-        <button type="button" onClick={() => { conn.disconnect(); navigate('/'); }}>
+        <button
+          type="button"
+          onClick={() => {
+            conn.disconnect();
+            navigate('/');
+          }}
+        >
           Home
         </button>
       </PhoneShell>
@@ -44,17 +58,70 @@ export function JoinPage() {
 
   if (conn.status === 'connected' && conn.state) {
     const phase = conn.state.phase;
+    const isHost = !!me?.isHost;
+
+    if (phase === 'TUTORIAL') {
+      return (
+        <PhoneShell>
+          <PhaseStub
+            title="Tutorial"
+            subtitle="Placeholder — follow along on the TV"
+            gameTitle={selectedMeta?.title}
+            gameThumb={selectedMeta?.thumbnail}
+          />
+          <PrivateHint privateState={conn.privateState} />
+          {isHost ? (
+            <HostLifecycleControls conn={conn} phase={phase} />
+          ) : (
+            <p className="tagline">Waiting for host…</p>
+          )}
+        </PhoneShell>
+      );
+    }
 
     if (phase === 'PLAYING') {
       return (
         <PhoneShell>
-          <h1 style={{ marginBottom: 0 }}>Play!</h1>
-          <p className="tagline">Hold a direction — release to stop</p>
+          <h1 style={{ marginBottom: 0 }}>
+            {selectedMeta ? selectedMeta.title : 'Play!'}
+          </h1>
+          <p className="tagline">
+            {conn.state.gameSubstate
+              ? `Substate: ${conn.state.gameSubstate}`
+              : 'Hold a direction — release to stop'}
+          </p>
+          <PrivateHint privateState={conn.privateState} />
           <Dpad
             onDir={(d) => conn.sendInput(d)}
             onStop={() => conn.sendInput('none')}
           />
+          {isHost ? <HostLifecycleControls conn={conn} phase={phase} /> : null}
           <PlayerList players={conn.state.players} />
+        </PhoneShell>
+      );
+    }
+
+    if (phase === 'RESULTS') {
+      return (
+        <PhoneShell>
+          <PhaseStub
+            title="Results"
+            subtitle={conn.state.resultsSummary ?? 'Round complete'}
+            gameTitle={selectedMeta?.title}
+            gameThumb={selectedMeta?.thumbnail}
+          />
+          <PlayerList players={conn.state.players} />
+          {isHost ? (
+            <button
+              type="button"
+              style={{ marginTop: '1rem', width: '100%' }}
+              onClick={() => conn.returnToLibrary()}
+            >
+              Return to library
+            </button>
+          ) : (
+            <p className="tagline">Waiting for host…</p>
+          )}
         </PhoneShell>
       );
     }
@@ -63,7 +130,16 @@ export function JoinPage() {
       return (
         <PhoneShell>
           <h1>Paused</h1>
-          <p className="tagline">Waiting for the TV to reconnect…</p>
+          <p className="tagline">
+            {conn.state.pauseReason === 'tv'
+              ? 'Waiting for the TV to reconnect…'
+              : 'Host paused'}
+          </p>
+          {isHost && conn.state.pauseReason === 'host' ? (
+            <button type="button" onClick={() => conn.resume()}>
+              Resume
+            </button>
+          ) : null}
         </PhoneShell>
       );
     }
@@ -75,6 +151,10 @@ export function JoinPage() {
         <p className="tagline">
           You are <strong>{me?.nickname ?? '…'}</strong>
           {me?.isHost ? ' (Host)' : ''}
+        </p>
+        <p className="tagline">
+          Players {conn.state.players.length}/{conn.state.capacity}
+          {conn.state.joiningLocked ? ' · Joining locked' : ''}
         </p>
         <PlayerList players={conn.state.players} />
 
@@ -96,23 +176,19 @@ export function JoinPage() {
           </div>
         ) : null}
 
-        {me?.isHost ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
-            <button
-              type="button"
-              className="secondary"
-              onClick={() => conn.lockJoining(!conn.state!.joiningLocked)}
-            >
-              {conn.state.joiningLocked ? 'Unlock joining' : 'Lock joining'}
-            </button>
-            <button type="button" onClick={() => conn.startGame()}>
-              Start demo game
-            </button>
-          </div>
+        {isHost ? (
+          <HostLobbyControls conn={conn} />
         ) : (
-          <p className="tagline" style={{ marginTop: '1rem' }}>
-            Waiting for host to start…
-          </p>
+          <div style={{ marginTop: '1rem' }}>
+            <p className="tagline">Game library (host selects)</p>
+            <GameLibrary
+              games={conn.state.games}
+              selectedGameId={conn.state.selectedGameId}
+            />
+            <p className="tagline" style={{ marginTop: '1rem' }}>
+              Waiting for host…
+            </p>
+          </div>
         )}
 
         {conn.error ? (
@@ -131,7 +207,12 @@ export function JoinPage() {
         onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
         maxLength={4}
         placeholder="ABCD"
-        style={{ ...inputStyle, fontSize: '1.75rem', letterSpacing: '0.2em', textAlign: 'center' }}
+        style={{
+          ...inputStyle,
+          fontSize: '1.75rem',
+          letterSpacing: '0.2em',
+          textAlign: 'center',
+        }}
       />
       <label className="tagline" style={{ marginTop: '0.75rem' }}>
         Nickname
@@ -176,6 +257,193 @@ export function JoinPage() {
         <p style={{ color: 'var(--danger)' }}>{conn.error}</p>
       ) : null}
     </PhoneShell>
+  );
+}
+
+function PrivateHint({ privateState }: { privateState: unknown }) {
+  if (!privateState || typeof privateState !== 'object') return null;
+  const secret = (privateState as { secret?: string }).secret;
+  if (!secret) return null;
+  return (
+    <div
+      className="panel"
+      style={{ margin: '0.75rem 0', borderLeft: '4px solid var(--accent-2)' }}
+    >
+      <p className="tagline" style={{ margin: 0, fontSize: '0.85rem' }}>
+        Your private tip (only you see this)
+      </p>
+      <p style={{ margin: '0.25rem 0 0', fontWeight: 700 }}>{secret}</p>
+    </div>
+  );
+}
+
+function HostLobbyControls({
+  conn,
+}: {
+  conn: ReturnType<typeof useRoomConnection>;
+}) {
+  const state = conn.state!;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '1rem' }}>
+      <p className="tagline" style={{ margin: 0 }}>
+        Select a game
+      </p>
+      {state.games.map((g) => (
+        <button
+          key={g.id}
+          type="button"
+          className={state.selectedGameId === g.id ? '' : 'secondary'}
+          onClick={() => conn.selectGame(g.id)}
+          style={{ textAlign: 'left', borderRadius: 16 }}
+        >
+          <span style={{ fontSize: '1.25rem', marginRight: 8 }}>{g.thumbnail}</span>
+          <strong>{g.title}</strong>
+          <span className="tagline" style={{ display: 'block', fontWeight: 600 }}>
+            {g.minPlayers}–{g.maxPlayers} · ~{g.estimatedDurationMinutes} min
+          </span>
+        </button>
+      ))}
+
+      <div className="panel">
+        <p className="tagline" style={{ margin: '0 0 0.5rem' }}>
+          Content settings
+        </p>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button
+            type="button"
+            className={state.contentMode === 'family' ? '' : 'secondary'}
+            onClick={() => conn.setContentSettings('family')}
+          >
+            Family
+          </button>
+          <button
+            type="button"
+            className={state.contentMode === 'adult' ? '' : 'secondary'}
+            onClick={() => conn.setContentSettings('adult')}
+          >
+            Adult
+          </button>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => conn.lockJoining(!state.joiningLocked)}
+      >
+        {state.joiningLocked ? 'Unlock joining' : 'Lock joining'}
+      </button>
+
+      <button
+        type="button"
+        disabled={!state.selectedGameId}
+        onClick={() => conn.startTutorial()}
+      >
+        Start tutorial
+      </button>
+
+      {state.selectedGameId ? (
+        <button
+          type="button"
+          className="secondary"
+          onClick={() => conn.returnToLibrary()}
+        >
+          Clear selection / library
+        </button>
+      ) : null}
+
+      <HostPlayerAdmin conn={conn} />
+    </div>
+  );
+}
+
+function HostLifecycleControls({
+  conn,
+  phase,
+}: {
+  conn: ReturnType<typeof useRoomConnection>;
+  phase: string;
+}) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem' }}>
+      {phase === 'TUTORIAL' ? (
+        <button type="button" onClick={() => conn.startRound()}>
+          Start round
+        </button>
+      ) : null}
+      {phase === 'PLAYING' ? (
+        <>
+          <button type="button" className="secondary" onClick={() => conn.pause()}>
+            Pause
+          </button>
+          <button type="button" onClick={() => conn.endRound()}>
+            End round → Results
+          </button>
+        </>
+      ) : null}
+      <button
+        type="button"
+        className="secondary"
+        onClick={() => conn.returnToLibrary()}
+      >
+        Return to library
+      </button>
+      <HostPlayerAdmin conn={conn} />
+    </div>
+  );
+}
+
+function HostPlayerAdmin({
+  conn,
+}: {
+  conn: ReturnType<typeof useRoomConnection>;
+}) {
+  const others =
+    conn.state?.players.filter((p) => p.id !== conn.playerId) ?? [];
+  if (others.length === 0) return null;
+  return (
+    <div className="panel" style={{ marginTop: '0.5rem' }}>
+      <p className="tagline" style={{ margin: '0 0 0.5rem' }}>
+        Players (host)
+      </p>
+      {others.map((p) => {
+        const a = getAvatar(p.avatarId);
+        return (
+          <div
+            key={p.id}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              marginBottom: '0.5rem',
+              flexWrap: 'wrap',
+            }}
+          >
+            <span>
+              {a.symbol} {p.nickname}
+              {!p.connected ? ' (away)' : ''}
+            </span>
+            <button
+              type="button"
+              className="secondary"
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+              disabled={!p.connected}
+              onClick={() => conn.transferHost(p.id)}
+            >
+              Make host
+            </button>
+            <button
+              type="button"
+              className="danger"
+              style={{ padding: '0.35rem 0.75rem', fontSize: '0.85rem' }}
+              onClick={() => conn.removePlayer(p.id)}
+            >
+              Remove
+            </button>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 

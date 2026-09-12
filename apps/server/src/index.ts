@@ -3,7 +3,13 @@ import { WebSocketTransport } from '@colyseus/ws-transport';
 import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
+import { listGameCatalog } from '@roomjoy/game-sdk';
 import { RoomJoyRoom, roomsByCode } from './room/RoomJoyRoom.js';
+
+// Register game modules (side-effect registerGame)
+import '@roomjoy/confidence-club';
+import '@roomjoy/mixed-signals';
+import '@roomjoy/snack-chase';
 
 const PORT = Number(process.env.PORT ?? 2567);
 const HOST = process.env.HOST ?? '0.0.0.0';
@@ -13,7 +19,11 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'roomjoy-server', version: '0.1.0' });
+  res.json({ ok: true, service: 'roomjoy-server', version: '0.2.0' });
+});
+
+app.get('/api/games', (_req, res) => {
+  res.json({ games: listGameCatalog() });
 });
 
 /** Resolve short room code → Colyseus room id (for phone join). */
@@ -51,6 +61,8 @@ gameServer.define('roomjoy', RoomJoyRoom);
 void gameServer.listen(PORT, HOST).then(() => {
   console.log(`RoomJoy server listening on http://${HOST}:${PORT}`);
   console.log(`  Colyseus room: "roomjoy"`);
+  console.log(`  Games: ${listGameCatalog().map((g) => g.id).join(', ')}`);
   console.log(`  Health: GET /health`);
   console.log(`  Lookup: GET /api/rooms/:code`);
+  console.log(`  Catalog: GET /api/games`);
 });

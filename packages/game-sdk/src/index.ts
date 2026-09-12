@@ -1,36 +1,79 @@
 /**
- * RoomJoy Game SDK — stub for Milestone 1.
- * Future games register via GameDefinition and receive authoritative room hooks.
+ * RoomJoy Game SDK — Milestone 2 registration + lifecycle hooks.
+ * Games register metadata and stubs; the platform owns room membership.
  */
-import type { Direction, RoomPhase } from '@roomjoy/protocol';
+import type {
+  ContentMode,
+  Direction,
+  GameCatalogEntry,
+  RoomPhase,
+} from '@roomjoy/protocol';
 
 export interface GamePlayer {
   id: string;
   nickname: string;
   avatarId: string;
+  isHost: boolean;
+}
+
+export interface GameSettingsSchemaField {
+  key: string;
+  label: string;
+  type: 'toggle' | 'enum';
+  options?: string[];
+  defaultValue: string | boolean;
 }
 
 export interface GameDefinition {
   id: string;
-  name: string;
+  title: string;
+  description: string;
+  /** Placeholder thumbnail (emoji or path) */
+  thumbnail: string;
   minPlayers: number;
   maxPlayers: number;
-  /** Called when host starts this game (M2+) */
-  onStart?(ctx: GameContext): void;
-  onTick?(ctx: GameContext, dt: number): void;
+  estimatedDurationMinutes: number;
+  settingsSchema: GameSettingsSchemaField[];
+
+  /** Server: create opaque game state when selected / round starts */
+  createInitialState?(contentMode: ContentMode): unknown;
+  onTutorialStart?(ctx: GameContext): void;
+  onRoundStart?(ctx: GameContext): void;
+  /** Called each tick while PLAYING and not paused */
+  onTick?(ctx: GameContext, dtMs: number): void;
   onInput?(ctx: GameContext, playerId: string, direction: Direction): void;
-  onEnd?(ctx: GameContext): void;
+  onPause?(ctx: GameContext): void;
+  onResume?(ctx: GameContext): void;
+  /** Produce RESULTS summary; platform transitions to RESULTS */
+  onEnd?(ctx: GameContext): { summary: string };
+  cleanup?(ctx: GameContext): void;
+  /**
+   * Per-player private payload. Must never include other players' secrets.
+   * Platform delivers only to that player (not TV, not other phones, not host-as-others).
+   */
+  getPrivateState?(ctx: GameContext, playerId: string): unknown;
+  /** Optional PLAYING substate label for UI stubs */
+  getSubstate?(ctx: GameContext): string | null;
 }
 
 export interface GameContext {
   phase: RoomPhase;
+  contentMode: ContentMode;
   players: GamePlayer[];
+  gameState: unknown;
+  setGameState(next: unknown): void;
+  setSubstate(label: string | null): void;
   broadcast(event: string, payload: unknown): void;
 }
 
 const registry = new Map<string, GameDefinition>();
 
 export function registerGame(def: GameDefinition): void {
+  if (registry.has(def.id)) {
+    // Idempotent re-register (HMR / double import)
+    registry.set(def.id, def);
+    return;
+  }
   registry.set(def.id, def);
 }
 
@@ -40,4 +83,51 @@ export function getGame(id: string): GameDefinition | undefined {
 
 export function listGames(): GameDefinition[] {
   return [...registry.values()];
+}
+
+export function listGameCatalog(): GameCatalogEntry[] {
+  return listGames().map((g) => ({
+    id: g.id,
+    title: g.title,
+    description: g.description,
+    thumbnail: g.thumbnail,
+    minPlayers: g.minPlayers,
+    maxPlayers: g.maxPlayers,
+    estimatedDurationMinutes: g.estimatedDurationMinutes,
+  }));
+}
+
+export function requireGame(id: string): GameDefinition {
+  const g = getGame(id);
+  if (!g) throw new Error(`Unknown game: ${id}`);
+  return g;
+}
+
+/** Build a GameContext helper bound to mutable holders. */
+export function makeGameContext(opts: {
+  phase: RoomPhase;
+  contentMode: ContentMode;
+  players: GamePlayer[];
+  getState: () => unknown;
+  setState: (s: unknown) => void;
+  setSubstate: (s: string | null) => void;
+  broadcast?: (event: string, payload: unknown) => void;
+}): GameContext {
+  return {
+    phase: opts.phase,
+    contentMode: opts.contentMode,
+    players: opts.players,
+    get gameState() {
+      return opts.getState();
+    },
+    setGameState(next) {
+      opts.setState(next);
+    },
+    setSubstate(label) {
+      opts.setSubstate(label);
+    },
+    broadcast(event, payload) {
+      opts.broadcast?.(event, payload);
+    },
+  };
 }

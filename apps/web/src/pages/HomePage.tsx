@@ -27,13 +27,18 @@ export function HomePage() {
           </button>
         </Link>
         <Link to="/join">
-          <button type="button" className="secondary" style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}>
+          <button
+            type="button"
+            className="secondary"
+            style={{ fontSize: '1.2rem', padding: '1rem 2rem' }}
+          >
             Phone — Join
           </button>
         </Link>
       </div>
-      <p className="tagline" style={{ maxWidth: 420 }}>
-        Milestone 1 prototype: lobby, host claim, reconnect, and a moving demo character.
+      <p className="tagline" style={{ maxWidth: 480 }}>
+        Milestone 2: shared platform — game library, lobby polish, full room lifecycle,
+        and host controls. Gameplay content is still placeholder.
       </p>
     </main>
   );

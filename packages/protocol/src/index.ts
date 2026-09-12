@@ -1,6 +1,6 @@
-/** RoomJoy shared protocol — Milestone 1 */
+/** RoomJoy shared protocol — Milestone 2 */
 
-export const PROTOCOL_VERSION = 1;
+export const PROTOCOL_VERSION = 2;
 
 export const MAX_PLAYERS = 8;
 export const MAX_NICKNAME_LENGTH = 16;
@@ -15,9 +15,21 @@ export const WORLD_WIDTH = 800;
 export const WORLD_HEIGHT = 450;
 export const PLAYER_SPEED = 180; // units per second
 
-export type RoomPhase = 'LOBBY' | 'PLAYING' | 'PAUSED' | 'ENDED';
+/** Full room lifecycle phases (plus PAUSED / ENDED for recovery). */
+export type RoomPhase =
+  | 'LOBBY'
+  | 'TUTORIAL'
+  | 'PLAYING'
+  | 'RESULTS'
+  | 'PAUSED'
+  | 'ENDED';
+
+export type ContentMode = 'family' | 'adult';
 
 export type ClientRole = 'tv' | 'phone';
+
+/** Permission lens for state delivery */
+export type ViewPermission = 'display' | 'host' | 'player';
 
 export interface AvatarPreset {
   id: string;
@@ -39,6 +51,8 @@ export const AVATAR_PRESETS: readonly AvatarPreset[] = [
 
 export type Direction = 'up' | 'down' | 'left' | 'right' | 'none';
 
+export type PauseReason = 'tv' | 'host';
+
 /** Client → Server messages */
 export interface MsgCreateTv {
   type: 'create_tv';
@@ -49,7 +63,6 @@ export interface MsgJoinPhone {
   roomCode: string;
   nickname: string;
   avatarId: string;
-  /** Reconnect with prior credentials */
   sessionToken?: string;
   playerId?: string;
 }
@@ -64,6 +77,51 @@ export interface MsgLockJoining {
   locked: boolean;
 }
 
+export interface MsgSelectGame {
+  type: 'select_game';
+  gameId: string;
+}
+
+export interface MsgSetContentSettings {
+  type: 'set_content_settings';
+  contentMode: ContentMode;
+}
+
+export interface MsgStartTutorial {
+  type: 'start_tutorial';
+}
+
+export interface MsgStartRound {
+  type: 'start_round';
+}
+
+export interface MsgPause {
+  type: 'pause';
+}
+
+export interface MsgResume {
+  type: 'resume';
+}
+
+export interface MsgRemovePlayer {
+  type: 'remove_player';
+  targetPlayerId: string;
+}
+
+export interface MsgTransferHost {
+  type: 'transfer_host';
+  targetPlayerId: string;
+}
+
+export interface MsgReturnToLibrary {
+  type: 'return_to_library';
+}
+
+export interface MsgEndRound {
+  type: 'end_round';
+}
+
+/** @deprecated M1 — prefer start_tutorial / start_round */
 export interface MsgStartGame {
   type: 'start_game';
 }
@@ -87,6 +145,16 @@ export type ClientMessage =
   | MsgJoinPhone
   | MsgClaimHost
   | MsgLockJoining
+  | MsgSelectGame
+  | MsgSetContentSettings
+  | MsgStartTutorial
+  | MsgStartRound
+  | MsgPause
+  | MsgResume
+  | MsgRemovePlayer
+  | MsgTransferHost
+  | MsgReturnToLibrary
+  | MsgEndRound
   | MsgStartGame
   | MsgInput
   | MsgReconnect;
@@ -102,6 +170,16 @@ export interface PlayerPublic {
   y: number;
 }
 
+export interface GameCatalogEntry {
+  id: string;
+  title: string;
+  description: string;
+  thumbnail: string;
+  minPlayers: number;
+  maxPlayers: number;
+  estimatedDurationMinutes: number;
+}
+
 export interface RoomStatePublic {
   roomId: string;
   roomCode: string;
@@ -115,6 +193,25 @@ export interface RoomStatePublic {
   tvConnected: boolean;
   tvRecoverDeadline?: number;
   tick: number;
+  /** Selected game module id, or null in library */
+  selectedGameId: string | null;
+  contentMode: ContentMode;
+  /** Game-defined substate inside PLAYING (stub string) */
+  gameSubstate: string | null;
+  pauseReason: PauseReason | null;
+  /** Phase to resume into after PAUSED */
+  resumePhase: RoomPhase | null;
+  /** Catalog snapshot for TV library (always public) */
+  games: GameCatalogEntry[];
+  /** Stub results payload when in RESULTS */
+  resultsSummary: string | null;
+}
+
+/** Per-player private channel — never broadcast; never sent to host for others */
+export interface MsgPrivateState {
+  type: 'private_state';
+  playerId: string;
+  payload: unknown;
 }
 
 export interface MsgWelcome {
@@ -126,6 +223,8 @@ export interface MsgWelcome {
   roomCode: string;
   hostCode?: string;
   state: RoomStatePublic;
+  /** Own private payload only (phones) */
+  privateState?: unknown;
 }
 
 export interface MsgState {
@@ -147,6 +246,7 @@ export interface MsgSessionEnded {
 export type ServerMessage =
   | MsgWelcome
   | MsgState
+  | MsgPrivateState
   | MsgError
   | MsgSessionEnded;
 

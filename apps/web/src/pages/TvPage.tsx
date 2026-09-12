@@ -5,6 +5,8 @@ import { joinUrl } from '../lib/serverUrl';
 import { QrJoin } from '../components/QrJoin';
 import { PlayerList } from '../components/PlayerList';
 import { GameCanvas } from '../components/GameCanvas';
+import { GameLibrary } from '../components/GameLibrary';
+import { PhaseStub } from '../components/PhaseStub';
 
 export function TvPage() {
   const conn = useRoomConnection();
@@ -13,6 +15,12 @@ export function TvPage() {
     () => (conn.roomCode ? joinUrl(conn.roomCode) : ''),
     [conn.roomCode],
   );
+
+  const selectedMeta = useMemo(() => {
+    const id = conn.state?.selectedGameId;
+    if (!id) return null;
+    return conn.state?.games.find((g) => g.id === id) ?? null;
+  }, [conn.state]);
 
   const onStart = async () => {
     unlockAudio();
@@ -64,84 +72,156 @@ export function TvPage() {
   }
 
   const phase = conn.state?.phase ?? 'LOBBY';
+  const games = conn.state?.games ?? [];
 
   if (phase === 'PAUSED') {
     const deadline = conn.state?.tvRecoverDeadline;
-    const secs = deadline
-      ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
-      : 60;
+    const reason = conn.state?.pauseReason;
+    const secs =
+      reason === 'tv' && deadline
+        ? Math.max(0, Math.ceil((deadline - Date.now()) / 1000))
+        : null;
     return (
       <TvFrame title="Paused">
         <p style={{ fontSize: 'var(--tv-body)' }}>
-          TV disconnected — recovering ({secs}s)…
+          {reason === 'tv'
+            ? `TV disconnected — recovering (${secs ?? 60}s)…`
+            : 'Host paused the game'}
         </p>
       </TvFrame>
     );
   }
 
+  if (phase === 'TUTORIAL') {
+    return (
+      <main className="app-shell" style={{ padding: '2rem', alignItems: 'center', justifyContent: 'center' }}>
+        <PhaseStub
+          title="Tutorial"
+          subtitle="Learn the basics — placeholder"
+          gameTitle={selectedMeta?.title}
+          gameThumb={selectedMeta?.thumbnail}
+          extra={
+            <p className="tagline">
+              Substate: {conn.state?.gameSubstate ?? '—'} · Content:{' '}
+              {conn.state?.contentMode}
+            </p>
+          }
+        />
+        <div style={{ marginTop: '2rem', width: '100%', maxWidth: 720 }}>
+          <PlayerList players={conn.state?.players ?? []} large />
+        </div>
+      </main>
+    );
+  }
+
   if (phase === 'PLAYING') {
+    // Snack Chase / demo still shows movement canvas; others show stub
+    const showCanvas =
+      !conn.state?.selectedGameId || conn.state.selectedGameId === 'snack-chase';
     return (
       <main className="app-shell" style={{ padding: '1rem', gap: '0.75rem' }}>
-        <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h1 style={{ margin: 0, fontSize: '1.75rem' }}>RoomJoy Demo</h1>
-          <span className="tagline">Room {conn.roomCode}</span>
+        <header
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.5rem',
+          }}
+        >
+          <h1 style={{ margin: 0, fontSize: '1.75rem' }}>
+            {selectedMeta
+              ? `${selectedMeta.thumbnail} ${selectedMeta.title}`
+              : 'RoomJoy Demo'}
+          </h1>
+          <span className="tagline">
+            Room {conn.roomCode}
+            {conn.state?.gameSubstate ? ` · ${conn.state.gameSubstate}` : ''}
+          </span>
         </header>
-        <GameCanvas
-          players={conn.state?.players ?? []}
-          tick={conn.state?.tick ?? 0}
-        />
+        {showCanvas ? (
+          <GameCanvas
+            players={conn.state?.players ?? []}
+            tick={conn.state?.tick ?? 0}
+          />
+        ) : (
+          <PhaseStub
+            title="Playing"
+            subtitle="Gameplay stub — full rules coming later"
+            gameTitle={selectedMeta?.title}
+            gameThumb={selectedMeta?.thumbnail}
+          />
+        )}
         <PlayerList players={conn.state?.players ?? []} />
       </main>
     );
   }
 
-  // LOBBY
+  if (phase === 'RESULTS') {
+    return (
+      <main
+        className="app-shell"
+        style={{
+          padding: '2rem',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '1rem',
+        }}
+      >
+        <PhaseStub
+          title="Results"
+          subtitle={conn.state?.resultsSummary ?? 'Round complete'}
+          gameTitle={selectedMeta?.title}
+          gameThumb={selectedMeta?.thumbnail}
+        />
+        <PlayerList players={conn.state?.players ?? []} large />
+        <p className="tagline">Waiting for host to return to the library…</p>
+      </main>
+    );
+  }
+
+  // LOBBY — library + join panel
   return (
     <main
       className="app-shell"
       style={{
-        padding: '1.5rem',
+        padding: '1.25rem',
         display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '1.5rem',
-        alignItems: 'center',
+        gridTemplateColumns: 'minmax(280px, 1fr) minmax(320px, 1.2fr)',
+        gap: '1.25rem',
+        alignItems: 'start',
       }}
     >
       <section style={{ textAlign: 'center' }}>
-        <h1 className="brand" style={{ fontSize: 'var(--tv-title)', margin: '0 0 0.5rem' }}>
+        <h1 className="brand" style={{ fontSize: 'var(--tv-title)', margin: '0 0 0.25rem' }}>
           RoomJoy
         </h1>
-        <p className="tagline" style={{ fontSize: 'var(--tv-body)', marginTop: 0 }}>
-          Scan to join
+        <p className="tagline" style={{ marginTop: 0 }}>
+          {conn.state?.joiningLocked
+            ? 'Joining locked'
+            : 'Scan to join · room code stays visible while unlocked'}
         </p>
-        {url ? <QrJoin url={url} size={300} /> : null}
-        <p style={{ fontSize: '1rem', color: 'var(--muted)', wordBreak: 'break-all' }}>
-          {url}
-        </p>
-      </section>
-      <section style={{ textAlign: 'center' }}>
-        <p className="tagline" style={{ marginBottom: 0 }}>
-          Room code
-        </p>
+        {!conn.state?.joiningLocked && url ? <QrJoin url={url} size={240} /> : null}
         <div
           style={{
             fontSize: 'var(--tv-code)',
             fontWeight: 800,
             letterSpacing: '0.2em',
             lineHeight: 1.1,
+            marginTop: '0.5rem',
           }}
           aria-label={`Room code ${conn.roomCode}`}
         >
           {conn.roomCode}
         </div>
         {conn.hostCode ? (
-          <div className="panel" style={{ marginTop: '1.5rem', display: 'inline-block' }}>
+          <div className="panel" style={{ marginTop: '1rem', display: 'inline-block' }}>
             <p className="tagline" style={{ margin: 0 }}>
               Host claim code (once)
             </p>
             <div
               style={{
-                fontSize: 'clamp(2rem, 5vw, 3.5rem)',
+                fontSize: 'clamp(1.75rem, 4vw, 3rem)',
                 fontWeight: 800,
                 letterSpacing: '0.15em',
                 color: 'var(--warn)',
@@ -149,22 +229,39 @@ export function TvPage() {
             >
               {conn.hostCode}
             </div>
-            <p className="tagline" style={{ margin: '0.5rem 0 0', fontSize: '0.95rem' }}>
-              Enter on your phone to become host
-            </p>
           </div>
         ) : (
-          <p style={{ marginTop: '1rem', color: 'var(--ok)', fontWeight: 800 }}>
+          <p style={{ marginTop: '0.75rem', color: 'var(--ok)', fontWeight: 800 }}>
             Host claimed ✓
           </p>
         )}
-        <div style={{ marginTop: '1.5rem' }}>
+        <div style={{ marginTop: '1rem' }}>
           <p className="tagline">
             Players ({conn.state?.players.length ?? 0}/{conn.state?.capacity ?? 8})
             {conn.state?.joiningLocked ? ' · Locked' : ''}
           </p>
           <PlayerList players={conn.state?.players ?? []} large />
         </div>
+      </section>
+
+      <section>
+        <h2 style={{ margin: '0 0 0.75rem', fontSize: '1.75rem' }}>
+          {conn.state?.selectedGameId ? 'Selected game' : 'Game library'}
+        </h2>
+        <p className="tagline" style={{ marginTop: 0 }}>
+          Host picks a game on their phone — TV reflects the selection.
+        </p>
+        <GameLibrary
+          games={games}
+          selectedGameId={conn.state?.selectedGameId ?? null}
+          large
+        />
+        {conn.state?.selectedGameId ? (
+          <p style={{ marginTop: '1rem', fontWeight: 700 }}>
+            Content: {conn.state.contentMode === 'adult' ? 'Adult' : 'Family'} · Waiting
+            for host to start tutorial…
+          </p>
+        ) : null}
       </section>
     </main>
   );
