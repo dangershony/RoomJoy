@@ -111,6 +111,10 @@ export function useRoomConnection(): RoomConnection {
         } else if (msg.state.hostClaimed) {
           setHostCode(null);
         }
+        if (msg.state.hostClaimed) {
+          // Drop stale claim errors once host is set
+          setError(null);
+        }
         if (msg.state.phase === 'ENDED') {
           setStatus('ended');
           clearCreds();
@@ -249,7 +253,10 @@ export function useRoomConnection(): RoomConnection {
   }, []);
 
   const claimHost = useCallback(
-    (code: string) => send('claim_host', { hostCode: code }),
+    (code: string) =>
+      send('claim_host', {
+        hostCode: code.trim().toUpperCase().replace(/\s+/g, ''),
+      }),
     [send],
   );
   const lockJoining = useCallback(

@@ -349,7 +349,7 @@ export class RoomJoyRoom extends Room {
     const welcome: ServerMessage = {
       type: 'welcome',
       role,
-      roomId: this.logic.roomId,
+      roomId: this.roomId,
       playerId,
       sessionToken,
       roomCode: this.logic.roomCode,

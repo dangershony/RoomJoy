@@ -316,7 +316,8 @@ export function claimHost(
   if (room.hostClaimed || room.hostCode === null) {
     throw new LogicError('HOST_ALREADY_CLAIMED', 'Host already claimed');
   }
-  if (hostCode.toUpperCase() !== room.hostCode.toUpperCase()) {
+  const normalized = hostCode.trim().toUpperCase().replace(/\s+/g, '');
+  if (normalized !== room.hostCode.toUpperCase()) {
     throw new LogicError('INVALID_HOST_CODE', 'Wrong host code');
   }
   const player = room.players.get(playerId);

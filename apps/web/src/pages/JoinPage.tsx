@@ -196,18 +196,62 @@ export function JoinPage() {
         {!conn.state.hostClaimed ? (
           <div className="panel" style={{ marginTop: '1rem' }}>
             <label className="tagline">Host claim code</label>
-            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                gap: '0.5rem',
+                marginTop: '0.5rem',
+                alignItems: 'stretch',
+              }}
+            >
               <input
                 value={hostInput}
-                onChange={(e) => setHostInput(e.target.value.toUpperCase())}
+                onChange={(e) =>
+                  setHostInput(
+                    e.target.value
+                      .toUpperCase()
+                      .replace(/[^A-Z0-9]/g, '')
+                      .slice(0, 4),
+                  )
+                }
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && hostInput.length === 4) {
+                    conn.claimHost(hostInput);
+                  }
+                }}
                 maxLength={4}
                 placeholder="CODE"
-                style={inputStyle}
+                autoCapitalize="characters"
+                autoCorrect="off"
+                spellCheck={false}
+                inputMode="text"
+                aria-label="Host claim code"
+                style={{
+                  ...inputStyle,
+                  width: 'auto',
+                  flex: 1,
+                  minWidth: 0,
+                  marginTop: 0,
+                }}
               />
-              <button type="button" onClick={() => conn.claimHost(hostInput)}>
+              <button
+                type="button"
+                style={{ flexShrink: 0 }}
+                disabled={hostInput.length !== 4}
+                onClick={() => conn.claimHost(hostInput)}
+              >
                 Claim
               </button>
             </div>
+            {conn.error ? (
+              <p style={{ color: 'var(--danger)', marginTop: '0.5rem', marginBottom: 0 }}>
+                {conn.error}
+              </p>
+            ) : (
+              <p className="tagline" style={{ marginTop: '0.5rem', marginBottom: 0 }}>
+                Enter the yellow code from the TV (not the room code)
+              </p>
+            )}
           </div>
         ) : null}
 

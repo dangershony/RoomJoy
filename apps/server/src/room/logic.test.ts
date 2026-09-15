@@ -134,6 +134,19 @@ describe('host claim once', () => {
     });
     expect(() => claimHost(room, p.id, 'ZZZZ')).toThrowError(/Wrong host/i);
   });
+
+  it('accepts host code with surrounding whitespace / lowercase', () => {
+    const room = createRoom();
+    const code = room.hostCode!;
+    const p = joinPhone(room, {
+      nickname: 'Pat',
+      avatarId: 'fox',
+      clientSessionId: 'pat',
+    });
+    claimHost(room, p.id, `  ${code.toLowerCase()}  `);
+    expect(p.isHost).toBe(true);
+    expect(room.hostClaimed).toBe(true);
+  });
 });
 
 describe('reconnect identity', () => {
