@@ -2,23 +2,24 @@
 
 Runbook for the live **LNVPS Tiny** host (Ubuntu 24.04, ~1 GB RAM). Build **off the VPS** — `pnpm build` / heavy installs will OOM on the box.
 
-**Live host (HTTP, no TLS yet)**
+**Live host (HTTPS)**
 
 | | |
 |--|--|
-| Hostname | `vm-1982.lnvps.cloud` |
+| Domain | `roomjoy.lol` (also `www.roomjoy.lol` → redirect) |
 | IPv4 | `185.18.221.40` |
 | IPv6 | `2a13:2c0::c043:ba53:cce2:c4ed` |
-| TV | http://vm-1982.lnvps.cloud/tv |
-| Join | http://vm-1982.lnvps.cloud/join |
-| Health | http://vm-1982.lnvps.cloud/health |
+| Legacy hostname | `vm-1982.lnvps.cloud` (HTTP redirects to https://roomjoy.lol) |
+| TV | https://roomjoy.lol/tv |
+| Join | https://roomjoy.lol/join |
+| Health | https://roomjoy.lol/health |
 
-QR / join links use `http://vm-1982.lnvps.cloud` (`VITE_PUBLIC_WEB_URL`). Phones connect to `ws://vm-1982.lnvps.cloud` (`VITE_SERVER_URL`).
+QR / join links use `https://roomjoy.lol` (`VITE_PUBLIC_WEB_URL`). Phones connect to `wss://roomjoy.lol` (`VITE_SERVER_URL`). TLS via Let’s Encrypt (`certbot` + nginx); `certbot.timer` renews automatically.
 
 ## Architecture
 
 ```
-Internet → Nginx (:80, IPv4+IPv6)
+Internet → Nginx (:443 TLS, IPv4+IPv6; :80 → 301 HTTPS)
             ├─ static SPA     /var/www/roomjoy  (apps/web/dist)
             ├─ /health /api/ /matchmake/        → 127.0.0.1:2567
             └─ WebSocket Upgrade                → 127.0.0.1:2567
@@ -36,15 +37,15 @@ The VPS is too small to compile the monorepo. Build on a workstation (or the age
 | `PORT` | `2567` | Internal Colyseus/HTTP port |
 | `HOST` | `127.0.0.1` | Bind loopback; Nginx is public |
 | `NODE_ENV` | `production` | |
-| `PUBLIC_WEB_URL` | `http://vm-1982.lnvps.cloud` | Server-side public origin |
-| `VITE_SERVER_URL` | `ws://vm-1982.lnvps.cloud` | **Build-time** Colyseus URL |
-| `VITE_PUBLIC_WEB_URL` | `http://vm-1982.lnvps.cloud` | QR / join links |
+| `PUBLIC_WEB_URL` | `https://roomjoy.lol` | Server-side public origin |
+| `VITE_SERVER_URL` | `wss://roomjoy.lol` | **Build-time** Colyseus URL |
+| `VITE_PUBLIC_WEB_URL` | `https://roomjoy.lol` | QR / join links |
 
 Web env vars are baked in at `pnpm build`. Rebuild the web app after changing them.
 
 `apps/web/src/lib/serverUrl.ts` also falls back to `window.location` (same-origin `ws:` / `wss:`) if `VITE_*` is unset, so phones can still join if someone opens the site via IP.
 
-When a real domain + TLS exist: rebuild with `wss://` / `https://` and add Certbot.
+TLS is live. Rebuild the web app after changing `VITE_*`. Renewals: `sudo certbot renew` (timer enabled); nginx authenticator/installer in `/etc/letsencrypt/renewal/roomjoy.lol.conf`.
 
 ## First deploy (what we actually ran)
 
@@ -70,8 +71,8 @@ sudo mkdir -p /opt/roomjoy /var/www/roomjoy
 
 ```bash
 cd /path/to/RoomJoy
-export VITE_SERVER_URL=ws://vm-1982.lnvps.cloud
-export VITE_PUBLIC_WEB_URL=http://vm-1982.lnvps.cloud
+export VITE_SERVER_URL=wss://roomjoy.lol
+export VITE_PUBLIC_WEB_URL=https://roomjoy.lol
 pnpm install
 pnpm build
 # Flatten server + workspace prod deps (no VPS install)
@@ -109,7 +110,7 @@ sudo chown -R www-data:www-data /var/www/roomjoy
 NODE_ENV=production
 HOST=127.0.0.1
 PORT=2567
-PUBLIC_WEB_URL=http://vm-1982.lnvps.cloud
+PUBLIC_WEB_URL=https://roomjoy.lol
 ```
 
 ### 4. systemd — `/etc/systemd/system/roomjoy.service`
@@ -158,7 +159,10 @@ upstream roomjoy_node {
 server {
     listen 80 default_server;
     listen [::]:80 default_server;
-    server_name vm-1982.lnvps.cloud 185.18.221.40 _;
+    # Production: dual HTTP(:80 redirect) + HTTPS(:443) server blocks.
+    # Cert: /etc/letsencrypt/live/roomjoy.lol/{fullchain,privkey}.pem
+    # HTTP server_name includes roomjoy.lol www.roomjoy.lol + legacy host/IP.
+    server_name roomjoy.lol www.roomjoy.lol vm-1982.lnvps.cloud 185.18.221.40 _;
 
     root /var/www/roomjoy;
     index index.html;
@@ -227,7 +231,7 @@ sudo nginx -t && sudo systemctl reload nginx
 ```bash
 sudo ufw allow 22/tcp
 sudo ufw allow 80/tcp
-sudo ufw allow 443/tcp   # reserved for later TLS
+sudo ufw allow 443/tcp   # HTTPS
 sudo ufw --force enable
 ```
 
@@ -238,8 +242,8 @@ Port 2567 stays closed; only Nginx is public.
 On the workstation:
 
 ```bash
-export VITE_SERVER_URL=ws://vm-1982.lnvps.cloud
-export VITE_PUBLIC_WEB_URL=http://vm-1982.lnvps.cloud
+export VITE_SERVER_URL=wss://roomjoy.lol
+export VITE_PUBLIC_WEB_URL=https://roomjoy.lol
 pnpm install && pnpm build
 pnpm --filter @roomjoy/server deploy --prod /tmp/roomjoy-server-prod
 rsync -az --delete -e "ssh -i /home/box/.ssh/roomjoy_lnvps" \
@@ -263,15 +267,16 @@ Keep a previous web `dist` tarball if you want instant static rollback.
 
 ## Health checks
 
-- `GET http://vm-1982.lnvps.cloud/health` → `{ ok: true, service: "roomjoy-server" }`
-- `GET http://vm-1982.lnvps.cloud/api/games` → three catalog entries
-- `POST http://vm-1982.lnvps.cloud/matchmake/create/roomjoy` → room + `roomCode`
+- `GET https://roomjoy.lol/health` → `{ ok: true, service: "roomjoy-server" }`
+- `GET https://roomjoy.lol/api/games` → three catalog entries
+- `POST https://roomjoy.lol/matchmake/create/roomjoy` → room + `roomCode`
 - WebSocket: `Upgrade: websocket` to `/` (or `/{processId}/{roomId}`) → `101 Switching Protocols`
-- Open `/tv`, create room, join from a phone via QR or `/join`
+- Open `/tv`, create room, join from a phone via QR or `/join` (QR origin must be `https://roomjoy.lol`)
+- HTTP `http://roomjoy.lol/*` → `301` to `https://roomjoy.lol/*`; `www` → apex
 
 ## Blockers / follow-ups
 
-- **HTTPS / custom domain:** none yet. HTTP only on the LNVPS hostname. Add Certbot after a domain points here (`wss://` rebuild required).
+- **HTTPS / custom domain:** done — `roomjoy.lol` + `www` Let’s Encrypt cert (expires ~90 days; timer renews). Rebuild with `wss://` / `https://` after URL changes.
 - **OOM:** do not build on the VPS. Node RSS after start is ~50–60 MB; systemd `MemoryMax=350M`.
 - **CORS:** Express `cors()` allows all origins; same-origin via Nginx is the production path.
 - **WebSocket:** nginx upgrade map + named location is required. A probe to `/` without a Colyseus seat prints `seat reservation expired` in the journal — that is expected, not a crash.
