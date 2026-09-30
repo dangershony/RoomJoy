@@ -540,7 +540,7 @@ export function applyInput(
     room.selectedGameId &&
     room.selectedGameId !== 'snack-chase'
   ) {
-    // Confidence Club / Mixed Signals: ignore directional input
+    // Confidence Club / Rail Rush / Mixed Signals: ignore directional input (use game_action)
     return;
   }
   if (seq < player.inputSeq) return;

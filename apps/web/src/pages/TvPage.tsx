@@ -9,6 +9,8 @@ import { GameLibrary } from '../components/GameLibrary';
 import { PhaseStub } from '../components/PhaseStub';
 import { TvConfidenceClub } from '../games/confidence-club/TvConfidenceClub';
 import type { CcPublicState } from '../games/confidence-club/types';
+import { TvRailRush } from '../games/rail-rush/TvRailRush';
+import type { RrPublicState } from '../games/rail-rush/types';
 
 export function TvPage() {
   const conn = useRoomConnection();
@@ -103,6 +105,14 @@ export function TvPage() {
         />
       );
     }
+    if (conn.state?.selectedGameId === 'rail-rush') {
+      return (
+        <TvRailRush
+          phase={phase}
+          publicGame={(conn.state.publicGameState as RrPublicState | null) ?? null}
+        />
+      );
+    }
     return (
       <main className="app-shell" style={{ padding: '2rem', alignItems: 'center', justifyContent: 'center' }}>
         <PhaseStub
@@ -130,6 +140,14 @@ export function TvPage() {
         <TvConfidenceClub
           phase={phase}
           publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+        />
+      );
+    }
+    if (conn.state?.selectedGameId === 'rail-rush') {
+      return (
+        <TvRailRush
+          phase={phase}
+          publicGame={(conn.state.publicGameState as RrPublicState | null) ?? null}
         />
       );
     }
@@ -182,6 +200,22 @@ export function TvPage() {
           <TvConfidenceClub
             phase={phase}
             publicGame={(conn.state.publicGameState as CcPublicState | null) ?? null}
+          />
+          <p className="tagline" style={{ textAlign: 'center' }}>
+            {conn.state?.resultsSummary}
+          </p>
+          <p className="tagline" style={{ textAlign: 'center' }}>
+            Waiting for host to return to the library…
+          </p>
+        </main>
+      );
+    }
+    if (conn.state?.selectedGameId === 'rail-rush') {
+      return (
+        <main className="app-shell" style={{ padding: '2rem', gap: '1rem' }}>
+          <TvRailRush
+            phase={phase}
+            publicGame={(conn.state.publicGameState as RrPublicState | null) ?? null}
           />
           <p className="tagline" style={{ textAlign: 'center' }}>
             {conn.state?.resultsSummary}

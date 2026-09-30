@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "pnpm -r --parallel --filter @roomjoy/server --filter @roomjoy/web run dev",
     "build": "pnpm -r --filter=./packages/** --filter=./apps/** run build",
-    "test": "pnpm --filter @roomjoy/content test && pnpm --filter @roomjoy/confidence-club test && pnpm --filter @roomjoy/server test",
+    "test": "pnpm --filter @roomjoy/content test && pnpm --filter @roomjoy/confidence-club test && pnpm --filter @roomjoy/rail-rush test && pnpm --filter @roomjoy/server test",
     "lint": "echo \"No lint configured for M3\""
   },
   "devDependencies": {

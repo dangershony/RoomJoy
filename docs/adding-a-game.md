@@ -32,4 +32,4 @@ Host-only: select game, content mode, start tutorial/round, pause/resume, remove
 | Player | Public + own `private_state` |
 | Host | Public + host controls; **not** other players' private payloads |
 
-Reference implementation: **Confidence Club** (`packages/games/confidence-club` + `packages/content`).
+Reference implementations: **Confidence Club** (`packages/games/confidence-club` + `packages/content`) and **Rail Rush** (`packages/games/rail-rush`).

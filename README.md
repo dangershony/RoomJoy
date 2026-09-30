@@ -2,7 +2,7 @@
 
 **Good company. Clever games.**
 
-TV + phone multiplayer party games. Milestone 3 ships a complete **Confidence Club** vertical slice on the M2 platform (library, lobby, lifecycle, host controls).
+TV + phone multiplayer party games. Playable: **Confidence Club** and **Rail Rush**. Mixed Signals & Snack Chase remain stubs. Platform: library, lobby, lifecycle, host controls.
 
 ## Requirements
 
@@ -28,9 +28,16 @@ pnpm dev          # server :2567 + web :5173
 6. Each question: answer + confidence 1/2/3 → clue → optional revise (confidence locked) → reveal. Six questions; scores may go negative; ties share place.
 
 ```bash
-pnpm test         # content schema + CC scoring/engine + server lifecycle
+pnpm test         # content + CC + Rail Rush + server lifecycle
 pnpm build
 ```
+
+### Play Rail Rush locally
+
+1. Same TV + phone lobby as above (need **2+** players).
+2. Host selects **Rail Rush**, picks content mode, **Start tutorial**, then **Start round**.
+3. Phones: large **Left** / **Right** to swap lanes. TV shows all runners staggered on one 3-lane track.
+4. Hit an obstacle → eliminated. Distance = score. Round ends when everyone is out (or host ends).
 
 ## Monorepo layout
 
@@ -40,7 +47,7 @@ apps/server       Node + Colyseus + TypeScript (authoritative room)
 packages/protocol Shared types, constants, nickname sanitize
 packages/game-sdk Game registration + lifecycle hooks
 packages/content  Versioned Confidence Club question packs (zod-validated)
-packages/games/*  Confidence Club (playable) / Mixed Signals & Snack Chase (stubs)
+packages/games/*  Confidence Club & Rail Rush (playable) / Mixed Signals & Snack Chase (stubs)
 docs/             Architecture, TV notes, VPS deploy, adding a game
 ```
 

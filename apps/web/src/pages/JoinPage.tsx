@@ -8,6 +8,8 @@ import { PhaseStub } from '../components/PhaseStub';
 import { getAvatar } from '@roomjoy/protocol';
 import { PhoneConfidenceClub } from '../games/confidence-club/PhoneConfidenceClub';
 import type { CcPrivateState, CcPublicState } from '../games/confidence-club/types';
+import { PhoneRailRush } from '../games/rail-rush/PhoneRailRush';
+import type { RrPrivateState, RrPublicState } from '../games/rail-rush/types';
 
 export function JoinPage() {
   const { code: codeParam } = useParams();
@@ -62,6 +64,7 @@ export function JoinPage() {
     const phase = conn.state.phase;
     const isHost = !!me?.isHost;
     const isCC = conn.state.selectedGameId === 'confidence-club';
+    const isRailRush = conn.state.selectedGameId === 'rail-rush';
 
     if (isCC && (phase === 'TUTORIAL' || phase === 'PLAYING' || phase === 'RESULTS')) {
       return (
@@ -81,6 +84,27 @@ export function JoinPage() {
             }
             onStartRound={() => conn.startRound()}
             onPause={() => conn.pause()}
+            onReturnToLibrary={() => conn.returnToLibrary()}
+          />
+          {isHost && phase !== 'RESULTS' ? <HostPlayerAdmin conn={conn} /> : null}
+        </PhoneShell>
+      );
+    }
+
+    if (isRailRush && (phase === 'TUTORIAL' || phase === 'PLAYING' || phase === 'RESULTS')) {
+      return (
+        <PhoneShell>
+          <PhoneRailRush
+            phase={phase}
+            publicGame={(conn.state.publicGameState as RrPublicState | null) ?? null}
+            privateState={(conn.privateState as RrPrivateState | null) ?? null}
+            isHost={isHost}
+            onTutorialNext={() => conn.sendGameAction('tutorial_next')}
+            onLaneLeft={() => conn.sendGameAction('lane_left')}
+            onLaneRight={() => conn.sendGameAction('lane_right')}
+            onStartRound={() => conn.startRound()}
+            onPause={() => conn.pause()}
+            onEndRound={() => conn.endRound()}
             onReturnToLibrary={() => conn.returnToLibrary()}
           />
           {isHost && phase !== 'RESULTS' ? <HostPlayerAdmin conn={conn} /> : null}

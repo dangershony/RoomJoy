@@ -35,6 +35,9 @@ importers:
       '@roomjoy/protocol':
         specifier: workspace:*
         version: link:../../packages/protocol
+      '@roomjoy/rail-rush':
+        specifier: workspace:*
+        version: link:../../packages/games/rail-rush
       '@roomjoy/snack-chase':
         specifier: workspace:*
         version: link:../../packages/games/snack-chase
@@ -170,6 +173,22 @@ importers:
       typescript:
         specifier: 5.7.2
         version: 5.7.2
+
+  packages/games/rail-rush:
+    dependencies:
+      '@roomjoy/game-sdk':
+        specifier: workspace:*
+        version: link:../../game-sdk
+      '@roomjoy/protocol':
+        specifier: workspace:*
+        version: link:../../protocol
+    devDependencies:
+      typescript:
+        specifier: 5.7.2
+        version: 5.7.2
+      vitest:
+        specifier: 2.1.8
+        version: 2.1.8(@types/node@20.17.10)
 
   packages/games/snack-chase:
     dependencies:

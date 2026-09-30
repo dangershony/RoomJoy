@@ -10,6 +10,7 @@ import { RoomJoyRoom, roomsByCode } from './room/RoomJoyRoom.js';
 import '@roomjoy/confidence-club';
 import '@roomjoy/mixed-signals';
 import '@roomjoy/snack-chase';
+import '@roomjoy/rail-rush';
 
 const PORT = Number(process.env.PORT ?? 2567);
 const HOST = process.env.HOST ?? '0.0.0.0';

@@ -1,4 +1,4 @@
-# Architecture (Milestone 3)
+# Architecture
 
 ## Overview
 
@@ -34,7 +34,9 @@ Also: `PAUSED` (host or TV disconnect) with `resumePhase` / `pauseReason`; `ENDE
 
 ## Confidence Club
 
-Server-authoritative round flow: answering → locked → revising (clue) → reveal × 6. Scoring is pure TypeScript in `@roomjoy/confidence-club`. Content packs live in `@roomjoy/content` (family / adult JSON, zod-validated). Mixed Signals and Snack Chase remain stubs.
+**Confidence Club** — answering → locked → revising (clue) → reveal × 6; scoring in `@roomjoy/confidence-club`; content packs in `@roomjoy/content`.
+
+**Rail Rush** — shared 3-lane endless runner; server owns lanes, stagger, obstacles, eliminations, distance scores (`@roomjoy/rail-rush`). Mixed Signals and Snack Chase remain stubs.
 
 ## Game registration
 
@@ -51,6 +53,7 @@ Server-authoritative round flow: answering → locked → revising (clue) → re
 - `@roomjoy/protocol` — shared contracts
 - `@roomjoy/game-sdk` — registration + hooks
 - `@roomjoy/confidence-club` — playable rules + scoring
+- `@roomjoy/rail-rush` — playable endless runner (lanes / obstacles / rankings)
 - `@roomjoy/mixed-signals` / `snack-chase` — stubs
 - `@roomjoy/content` — versioned question packs
 
