@@ -62,7 +62,7 @@ export const railRush: GameDefinition = {
   description:
     'Dash down a shared 3-lane track. Swap lanes to dodge obstacles — last runner standing (or farthest distance) wins. About 3–5 minutes.',
   thumbnail: '🛤️',
-  minPlayers: 2,
+  minPlayers: 1,
   maxPlayers: 8,
   estimatedDurationMinutes: 5,
   settingsSchema: [

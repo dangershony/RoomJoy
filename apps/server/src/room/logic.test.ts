@@ -255,6 +255,15 @@ describe('lifecycle transitions', () => {
     expect(room.selectedGameId).toBeNull();
   });
 
+  it('allows Rail Rush to start with one player', () => {
+    const { room, host } = hostAndPlayers(1);
+    selectGame(room, host.id, 'rail-rush');
+    startTutorial(room, host.id);
+    expect(room.phase).toBe('TUTORIAL');
+    startRound(room, host.id);
+    expect(room.phase).toBe('PLAYING');
+  });
+
   it('host pause / resume during PLAYING', () => {
     const { room, host } = hostAndPlayers(3);
     selectGame(room, host.id, 'snack-chase');
@@ -391,12 +400,13 @@ describe('private state channel', () => {
 });
 
 describe('game catalog', () => {
-  it('registers three games', () => {
+  it('registers the game catalog', () => {
     const catalog = listGameCatalog();
     const ids = catalog.map((g) => g.id).sort();
     expect(ids).toEqual([
       'confidence-club',
       'mixed-signals',
+      'rail-rush',
       'snack-chase',
     ]);
     for (const g of catalog) {
@@ -405,6 +415,10 @@ describe('game catalog', () => {
       expect(g.thumbnail).toBeTruthy();
       expect(g.estimatedDurationMinutes).toBeGreaterThan(0);
     }
+    expect(catalog.find((g) => g.id === 'rail-rush')).toMatchObject({
+      minPlayers: 1,
+      maxPlayers: 8,
+    });
   });
 });
 

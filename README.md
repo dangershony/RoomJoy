@@ -34,7 +34,7 @@ pnpm build
 
 ### Play Rail Rush locally
 
-1. Same TV + phone lobby as above (need **2+** players).
+1. Same TV + phone lobby as above (supports **1–8** players).
 2. Host selects **Rail Rush**, picks content mode, **Start tutorial**, then **Start round**.
 3. Phones: large **Left** / **Right** to swap lanes. TV shows all runners staggered on one 3-lane track.
 4. Hit an obstacle → eliminated. Distance = score. Round ends when everyone is out (or host ends).
